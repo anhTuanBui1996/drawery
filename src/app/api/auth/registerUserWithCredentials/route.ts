@@ -5,7 +5,6 @@ import client from "@/src/lib/db";
 import { ExtendedAdapterUser } from "@/src/types/ExtendedAdapterUser";
 import { ObjectId } from "mongodb";
 import { getTranslations } from "next-intl/server";
-import { AdapterAccount } from "@auth/core/adapters";
 
 const adapter = MongoDBAdapter(client, { databaseName: "auth" });
 
