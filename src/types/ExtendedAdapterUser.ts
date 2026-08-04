@@ -2,9 +2,13 @@ import { AdapterUser } from "next-auth/adapters";
 
 // Tạo interface mới kế thừa AdapterUser
 export interface ExtendedAdapterUser extends AdapterUser {
-  username: string;
+  id: string;
+  username?: string;
   firstName?: string;
   lastName?: string;
-  password: string;
+  name?: string;
+  password?: string;
   createdAt?: Date;
+  bio?: string;
+  phone?: string;
 }

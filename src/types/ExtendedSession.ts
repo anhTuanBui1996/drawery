@@ -5,14 +5,14 @@ declare module "next-auth" {
     user: {
       id: string;
       username?: string;
-      emailVerified?: Date;
+      emailVerified: Date | null;
     } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
     username?: string;
-    emailVerified?: Date;
+    emailVerified: Date | null;
   }
 }
 
@@ -20,7 +20,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     username?: string;
-    emailVerified?: Date;
+    emailVerified: Date | null;
   }
 }
 
@@ -28,5 +28,6 @@ declare module "@auth/core/adapters" {
   interface AdapterUser {
     id: string;
     username?: string;
+    emailVerified: Date | null;
   }
 }

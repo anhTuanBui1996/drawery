@@ -24,6 +24,7 @@ import {
   Chip,
   Avatar,
   Paper,
+  CircularProgress,
 } from "@mui/material";
 import { LoginRounded } from "@mui/icons-material";
 import { Link } from "@/src/i18n/navigation";
@@ -143,20 +144,24 @@ const Index = () => {
             zIndex: 1,
           }}
         >
-          <Link
-            href={
-              s.status === "authenticated"
-                ? `/${s.data.user.username}/dashboard`
-                : "/signin"
-            }
-            style={{ color: "inherit", textDecoration: "none" }}
-          >
-            {t(
-              s.status === "authenticated"
-                ? "buttonBackToDashboard"
-                : "buttonSignIn",
-            )}
-          </Link>
+          {s.status === "loading" ? (
+            <CircularProgress title={t("loading")} />
+          ) : (
+            <Link
+              href={
+                s.status === "authenticated"
+                  ? `/${s.data.user.username}/dashboard`
+                  : "/signin"
+              }
+              style={{ color: "inherit", textDecoration: "none" }}
+            >
+              {t(
+                s.status === "authenticated"
+                  ? "buttonBackToDashboard"
+                  : "buttonSignIn",
+              )}
+            </Link>
+          )}
         </Button>
         <Container
           maxWidth="lg"

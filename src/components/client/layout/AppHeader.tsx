@@ -179,16 +179,27 @@ export default function ApplicationHeaderBar({
             >
               <MenuList>
                 <MenuItem onClick={handleCloseUserMenu}>
-                  <ListItemIcon>
-                    <InfoIcon />
-                  </ListItemIcon>
-                  <Typography sx={{ textAlign: "center" }}>
-                    {t("profile")}
-                  </Typography>
+                  <Link
+                    href={`/${session?.user.username}/profile`}
+                    style={{
+                      display: "flex",
+                      textDecoration: "none",
+                      color: "inherit",
+                      flexWrap: "nowrap",
+                      flexDirection: "row",
+                    }}
+                  >
+                    <ListItemIcon>
+                      <InfoIcon />
+                    </ListItemIcon>
+                    <Typography sx={{ textAlign: "center" }}>
+                      {t("profile")}
+                    </Typography>
+                  </Link>
                 </MenuItem>
                 <MenuItem onClick={handleCloseUserMenu}>
                   <Link
-                    href={`/${session?.user.username}/linkAccount`}
+                    href={`/${session?.user.username}/account`}
                     style={{
                       display: "flex",
                       textDecoration: "none",

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useFormatter, useTranslations } from "next-intl";
 import Swal from "sweetalert2";
-import { Camera, ShieldCheck, KeyRound, Link2, Save } from "lucide-react";
+import { Camera, KeyRound, Link2, Save } from "lucide-react";
 import {
   Box,
   Container,
@@ -21,9 +21,10 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Link } from "@/src/i18n/navigation";
-import { useColorScheme } from "@mui/material/styles";
 
 interface ProfileForm {
+  firstName: string;
+  lastName: string;
   name: string;
   phone: string;
   bio: string;
@@ -32,11 +33,11 @@ interface ProfileForm {
 export default function Profile(): React.JSX.Element {
   const { data: session, status, update } = useSession();
   const t = useTranslations("Profile");
-  const formatter = useFormatter();
-  const s = useColorScheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProfileForm>({
+    firstName: "",
+    lastName: "",
     name: "",
     phone: "",
     bio: "",
@@ -55,9 +56,11 @@ export default function Profile(): React.JSX.Element {
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/account/profile");
+      const res = await fetch("/api/account/profileOfUser");
       const data = await res.json();
       setForm({
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
         name: data.name || "",
         phone: data.phone || "",
         bio: data.bio || "",
@@ -90,7 +93,7 @@ export default function Profile(): React.JSX.Element {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch("/api/account/avatar", {
+      const res = await fetch("/api/account/setAvatarOfUser", {
         method: "POST",
         body: formData,
       });
@@ -133,7 +136,7 @@ export default function Profile(): React.JSX.Element {
 
     setIsSaving(true);
     try {
-      const res = await fetch("/api/account/profile", {
+      const res = await fetch("/api/account/profileOfUser", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -275,6 +278,20 @@ export default function Profile(): React.JSX.Element {
           ) : (
             <Stack spacing={2.5}>
               <TextField
+                label={t("firstName")}
+                fullWidth
+                value={form.firstName}
+                onChange={handleChange("firstName")}
+              />
+
+              <TextField
+                label={t("lastName")}
+                fullWidth
+                value={form.lastName}
+                onChange={handleChange("lastName")}
+              />
+
+              <TextField
                 label={t("displayName")}
                 fullWidth
                 value={form.name}
@@ -338,8 +355,8 @@ export default function Profile(): React.JSX.Element {
         <Stack spacing={1.5}>
           <Button
             component={Link}
-            href="/account/link"
             fullWidth
+            href={`/${session?.user.username}/account`}
             variant="outlined"
             startIcon={<Link2 size={16} />}
             sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
@@ -355,6 +372,17 @@ export default function Profile(): React.JSX.Element {
             sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
           >
             {t("changePassword")}
+          </Button>
+          <Button
+            component={Link}
+            href={`/${session?.user.username}/changePassword`}
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<KeyRound size={16} />}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+          >
+            {t("deleteUser")}
           </Button>
         </Stack>
       </Container>

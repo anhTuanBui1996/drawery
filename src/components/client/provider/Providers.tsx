@@ -23,7 +23,7 @@ export function Providers({
   return (
     <SessionProvider>
       <EmotionProvider>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={theme} defaultMode="light">
           <HeaderToggle locale={locale}>{children}</HeaderToggle>
         </ThemeProvider>
       </EmotionProvider>

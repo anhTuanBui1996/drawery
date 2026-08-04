@@ -105,7 +105,7 @@ export default function SwitchTheme({
             color="text.secondary"
             sx={{ fontWeight: 600 }}
           >
-            {t(`${s.mode || "dark"}Mode`)}
+            {t(`${s.mode === "dark" ? "dark" : "light"}Mode`)}
           </Typography>
         }
       />

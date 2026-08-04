@@ -36,7 +36,10 @@ export const authOptions: NextAuthOptions = {
         );
         const data = await res.json();
         if (res.ok && data.success) {
-          return data.user;
+          const userId = data.user._id;
+          const adapterUser = data.user as ExtendedAdapterUser;
+          adapterUser.id = userId;
+          return adapterUser;
         }
         return null;
       },
@@ -79,7 +82,7 @@ export const authOptions: NextAuthOptions = {
         token.email = adapterUser.email;
         token.picture = adapterUser.image;
         token.username = adapterUser.username;
-        token.emailVerified = adapterUser.emailVerified || undefined;
+        token.emailVerified = adapterUser.emailVerified;
       }
       return token;
     },
