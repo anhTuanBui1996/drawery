@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import client from "@/src/lib/db";
 import { authOptions } from "@/src/lib/auth";
-import { ExtendedAdapterUser } from "@/src/types/ExtendedAdapterUser";
 
 export async function GET() {
   const session = await getServerSession();
