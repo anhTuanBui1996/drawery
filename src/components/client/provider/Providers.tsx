@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import HeaderToggle from "@/src/components/client/layout/HeaderToggle";
 import { EmotionProvider } from "@/src/components/client/provider/EmotionProvider";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import LoaderProvider from "./LoaderProvider";
 
 const theme = createTheme({
   colorSchemes: {
@@ -24,7 +25,9 @@ export function Providers({
     <SessionProvider>
       <EmotionProvider>
         <ThemeProvider theme={theme} defaultMode="light">
-          <HeaderToggle locale={locale}>{children}</HeaderToggle>
+          <HeaderToggle locale={locale}>
+            <LoaderProvider>{children}</LoaderProvider>
+          </HeaderToggle>
         </ThemeProvider>
       </EmotionProvider>
     </SessionProvider>

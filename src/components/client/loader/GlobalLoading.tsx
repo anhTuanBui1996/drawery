@@ -1,14 +1,17 @@
 "use client";
 
 import { Backdrop, CircularProgress } from "@mui/material";
+import { useLoader } from "../provider/LoaderProvider";
 
-export default function GlobalLoading() {
+export default function GlobalLoading({ open }: { open: boolean }) {
+  const loaderContext = useLoader();
   return (
     <Backdrop
       sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1 })}
-      open
+      open={loaderContext?.isLoading || open}
     >
       <CircularProgress color="inherit" />
+      {loaderContext?.text}
     </Backdrop>
   );
 }

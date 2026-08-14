@@ -4,12 +4,14 @@ import { ObjectId } from "mongodb";
 import { put, del } from "@vercel/blob";
 import { authOptions } from "@/src/lib/auth";
 import client from "@/src/lib/db";
+import { getTranslations } from "next-intl/server";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
+  const t = await getTranslations("/");
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,21 +23,21 @@ export async function POST(req: Request) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "Không tìm thấy file" },
+        { error: "File's not found" },
         { status: 400 },
       );
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Chỉ chấp nhận file JPEG, PNG hoặc WEBP" },
+        { error: "Only accept file JPEG, PNG or WEBP" },
         { status: 400 },
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File không được vượt quá 5MB" },
+        { error: "File exceed 50MB" },
         { status: 400 },
       );
     }
@@ -68,6 +70,10 @@ export async function POST(req: Request) {
     ) {
       await del(user.image).catch(() => {
         // Bỏ qua nếu file cũ không tồn tại hoặc đã bị xóa trước đó
+        return NextResponse.json(
+          { error: "Can't delete old avatar" },
+          { status: 500 },
+        );
       });
     }
 
@@ -82,7 +88,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("POST /api/account/setAvatarOfUser error:", err);
     return NextResponse.json(
-      { error: "Đã có lỗi xảy ra, vui lòng thử lại" },
+      { error: t("alertError") },
       { status: 500 },
     );
   }

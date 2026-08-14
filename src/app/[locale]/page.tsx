@@ -150,7 +150,7 @@ const Index = () => {
             <Link
               href={
                 s.status === "authenticated"
-                  ? `/${s.data.user.username}/dashboard`
+                  ? `/dashboard`
                   : "/signin"
               }
               style={{ color: "inherit", textDecoration: "none" }}
@@ -606,7 +606,7 @@ const Index = () => {
                       color="text.secondary"
                       sx={{ mb: 3, fontStyle: "italic", lineHeight: 1.6 }}
                     >
-                      "{testimonial.quote}"
+                      {testimonial.quote}
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Avatar

@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { compare } from "bcrypt";
 import client from "@/src/lib/db";
-import { ExtendedAdapterUser } from "@/src/types/ExtendedAdapterUser";
+import { ExtendedAdapterUser } from "@/src/types/auth/ExtendedAdapterUser";
 import { getTranslations } from "next-intl/server";
-import { MongoDBAdapter } from "@auth/mongodb-adapter";
-
-const adapter = MongoDBAdapter(client, { databaseName: "auth" });
+import adapter from "@/src/lib/adapter";
 
 export async function POST(req: Request) {
+  const t = await getTranslations("SignIn");
   try {
-    const t = await getTranslations("SignIn");
     const { username, password }: { username: string; password: string } =
       await req.json();
 
@@ -49,9 +47,6 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Server error", detail: err },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

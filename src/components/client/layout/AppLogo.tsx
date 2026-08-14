@@ -3,14 +3,16 @@
 import { Link } from "@/src/i18n/navigation";
 import { Typography } from "@mui/material";
 import { useColorScheme } from "@mui/material/styles";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import React from "react";
 
 export default function AppLogo(): React.JSX.Element {
   const s = useColorScheme();
+  const session = useSession();
   return (
     <Link
-      href={"/dashboard"}
+      href={`/${session?.data?.user.username}/dashboard`}
       style={{
         display: "flex",
         alignItems: "center",
@@ -25,7 +27,12 @@ export default function AppLogo(): React.JSX.Element {
         width={32}
         height={32}
       />{" "}
-      <Typography color="textPrimary" variant="subtitle1" component="strong" fontFamily="cursive">
+      <Typography
+        color="textPrimary"
+        variant="subtitle1"
+        component="strong"
+        fontFamily="cursive"
+      >
         DraWery
       </Typography>
     </Link>

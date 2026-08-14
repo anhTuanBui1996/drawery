@@ -11,7 +11,7 @@ import {
 import { useLocale } from "next-intl";
 import { routing } from "@/src/i18n/routing";
 import { useRouter, usePathname } from "@/src/i18n/navigation";
-import { countryMapping } from "@/src/lib/utils";
+import { countryMapping } from "@/src/lib/country";
 import Image from "next/image";
 import { useTransition } from "react";
 

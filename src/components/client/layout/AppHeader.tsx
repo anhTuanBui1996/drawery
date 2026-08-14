@@ -25,7 +25,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import VerifiedUserSharpIcon from "@mui/icons-material/VerifiedUserSharp";
 import { Avatar, Menu, MenuItem, MenuList, Tooltip } from "@mui/material";
 import { signOut, useSession } from "next-auth/react";
-import { getPathname } from "@/src/i18n/navigation";
+import { getPathname, usePathname } from "@/src/i18n/navigation";
 import { Link } from "@/src/i18n/navigation";
 import { useTranslations } from "next-intl";
 import SwitchTheme from "./SwitchTheme";
@@ -37,8 +37,8 @@ interface AppBarProps extends MuiAppBarProps {
 }
 
 const menuItems = [
-  { text: "dashboard", icon: <DashboardIcon />, href: "/dashboard" },
-  { text: "about", icon: <InfoIcon />, href: "/" },
+  { name: "dashboard", icon: <DashboardIcon />, href: "/dashboard" },
+  { name: "about", icon: <InfoIcon />, href: "/" },
 ];
 
 const AppBar = styled(MuiAppBar, {
@@ -89,6 +89,7 @@ export default function ApplicationHeaderBar({
   const colorScheme = useColorScheme();
   const { data: session } = useSession();
   const t = useTranslations("AppHeader");
+  const pathname = usePathname();
 
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
     null,
@@ -103,11 +104,7 @@ export default function ApplicationHeaderBar({
   };
 
   const handleSignOut = async () => {
-    fetch("/api/auth/clearSession", { method: "POST" })
-      .then(() => {
-        signOut({ callbackUrl: getPathname({ href: "/signin", locale }) });
-      })
-      .catch((err) => console.error("Error clearing tokens:", err));
+    signOut({ callbackUrl: getPathname({ href: "/signin", locale }) });
   };
 
   return (
@@ -180,7 +177,7 @@ export default function ApplicationHeaderBar({
               <MenuList>
                 <MenuItem onClick={handleCloseUserMenu}>
                   <Link
-                    href={`/${session?.user.username}/profile`}
+                    href={`/profile`}
                     style={{
                       display: "flex",
                       textDecoration: "none",
@@ -199,7 +196,7 @@ export default function ApplicationHeaderBar({
                 </MenuItem>
                 <MenuItem onClick={handleCloseUserMenu}>
                   <Link
-                    href={`/${session?.user.username}/account`}
+                    href={`/account`}
                     style={{
                       display: "flex",
                       textDecoration: "none",
@@ -260,11 +257,11 @@ export default function ApplicationHeaderBar({
         <Divider />
         <List>
           {menuItems.map((item) => (
-            <Link href={item.href} key={item.text}>
+            <Link href={item.href} key={item.name}>
               <ListItem disablePadding>
-                <ListItemButton>
+                <ListItemButton selected={pathname === item.href}>
                   <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={t(item.text)} />
+                  <ListItemText primary={t(item.name)} />
                 </ListItemButton>
               </ListItem>
             </Link>

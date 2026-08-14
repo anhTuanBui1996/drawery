@@ -57,7 +57,7 @@ export default function SignIn({
   useEffect(() => {
     switch (session.status) {
       case "authenticated":
-        router.push(callback || `/${session.data.user.username}/dashboard`);
+        router.push(callback || `/dashboard`);
         break;
       case "loading":
         setIsAuthenticating(true);

@@ -12,6 +12,7 @@
     "title": "Select language"
   },
   "/": {
+    "alertError": "An error occurred! Please try again...",
     "buttonSignIn": "Sign In",
     "loading": "Loading...",
     "buttonBackToDashboard": "Back to Dashboard",
@@ -145,12 +146,26 @@
     "saveButton": "Save changes",
     "manageLinkedAccounts": "Manage linked accounts",
     "changePassword": "Change password",
-    "deleteUser": "Delete your account",
+    "deleteUser": "Delete account",
+    "deleteUserTitle": "Delete your account",
+    "deleteUserDesc": "Please input information to confirm the deletion",
     "alertSuccessTitle": "Success",
-    "alertErrorTitle": "An error occurred",
-    "alertError": "Please try again",
+    "alertError": "An error occurred! Please try again...",
+    "alertErrorTitle": "Error",
     "alertSaveSuccess": "Information updated",
     "alertAvatarSuccess": "Avatar updated",
-    "alertNameRequired": "Please enter a display name"
+    "alertNameRequired": "Please enter a display name",
+    "passwordForUserDeletion": "Enter current password",
+    "newPasswordForChangePassword": "Enter new password",
+    "changePasswordSuccessfully": "Password is changed successfully",
+    "passwordIsIncorrect": "Password is incorrect",
+    "confirmationCodeForUserDeletion": "Enter confirmation code (sent to email)",
+    "confirmationCodeMustBe6": "Confirmation code's must be 6 digit",
+    "confirmationCodeAndTargetNotIdentical": "Confirmation code is invalid",
+    "confirmationCodeSendError": "Send confirmation mail error",
+    "send": "Send",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "signOutAllDevices": "Sign out all of devices after change password"
   }
 }

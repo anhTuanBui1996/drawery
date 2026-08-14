@@ -12,6 +12,7 @@
     "title": "Chọn ngôn ngữ"
   },
   "/": {
+    "alertError": "Đã có lỗi xảy ra! Vui lòng thử lại...",
     "buttonSignIn": "Đăng nhập",
     "loading": "Đang tải...",
     "buttonBackToDashboard": "Trở về Bảng điều khiển",
@@ -145,12 +146,26 @@
     "saveButton": "Lưu thay đổi",
     "manageLinkedAccounts": "Quản lý liên kết tài khoản",
     "changePassword": "Đổi mật khẩu",
-    "deleteUser": "Xóa tài khoản của bạn",
+    "deleteUser": "Xóa tài khoản",
+    "deleteUserTitle": "Xóa tài khoản của bạn",
+    "deleteUserDesc": "Vui lòng nhập thông tin để xác nhận việc xóa.",
     "alertSuccessTitle": "Thành công",
-    "alertErrorTitle": "Có lỗi xảy ra",
-    "alertError": "Vui lòng thử lại",
+    "alertError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "alertErrorTitle": "Lỗi",
     "alertSaveSuccess": "Đã cập nhật thông tin",
     "alertAvatarSuccess": "Đã cập nhật ảnh đại diện",
-    "alertNameRequired": "Vui lòng nhập tên hiển thị"
+    "alertNameRequired": "Vui lòng nhập tên hiển thị",
+    "passwordForUserDeletion": "Nhập mật khẩu hiện tại",
+    "newPasswordForChangePassword": "Nhập mật khẩu mới",
+    "changePasswordSuccessfully": "Đổi mật khẩu thành công",
+    "passwordIsIncorrect": "Mật khẩu không chính xác",
+    "confirmationCodeForUserDeletion": "Nhập mã xác nhận (gửi về email)",
+    "confirmationCodeMustBe6": "Mã xác nhận phải là 6 chữ số",
+    "confirmationCodeAndTargetNotIdentical": "Mã xác nhận không hợp lệ",
+    "confirmationCodeSendError": "Gửi mail xác nhận thất bại",
+    "send": "Gửi",
+    "submit": "Xác nhận",
+    "cancel": "Hủy",
+    "signOutAllDevices": "Đăng xuất khỏi tất cả thiết bị sau khi đổi mật khẩu"
   }
 }

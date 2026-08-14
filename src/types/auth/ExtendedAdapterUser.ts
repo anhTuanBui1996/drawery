@@ -11,4 +11,5 @@ export interface ExtendedAdapterUser extends AdapterUser {
   createdAt?: Date;
   bio?: string;
   phone?: string;
+  verifyCodeForUserDeletion?: string;
 }

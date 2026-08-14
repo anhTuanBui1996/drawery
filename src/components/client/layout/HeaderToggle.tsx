@@ -3,7 +3,7 @@
 import React from "react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/src/i18n/navigation";
 import AppHeader from "./AppHeader";
 import DrawHeader from "./DrawHeader";
 import { styled } from "@mui/material/styles";
@@ -41,8 +41,11 @@ export default function HeaderToggle({
 }) {
   const pathname = usePathname();
   const isInSigninOrSignupPage =
-    pathname === `/${locale}/signin` || pathname === `/${locale}/signup`;
-  const isInIndexPage = pathname === `/${locale}`;
+    pathname === `/${locale}/signin` ||
+    pathname === `/${locale}/signup` ||
+    pathname === `/signin` ||
+    pathname === `/signup`;
+  const isInIndexPage = pathname === `/${locale}` || pathname === `/`;
   const isInDrawingPage = pathname.endsWith("/drawing");
   const isShowHeader = !isInSigninOrSignupPage && !isInIndexPage;
 

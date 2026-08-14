@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import client from "@/src/lib/db";
-import { ExtendedAdapterUser } from "@/src/types/ExtendedAdapterUser";
+import { ExtendedAdapterUser } from "@/src/types/auth/ExtendedAdapterUser";
 import { ObjectId } from "mongodb";
 import { getTranslations } from "next-intl/server";
-
-const adapter = MongoDBAdapter(client, { databaseName: "auth" });
+import adapter from "@/src/lib/adapter";
 
 export async function POST(req: Request) {
   const t = await getTranslations("SignIn");
@@ -43,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     // Hash password
-    const hashed = await hash(password, 10);
+    const hashed = await hash(password, process.env.PASSWORD_SALT_ROUND || 10);
     const newUser: ExtendedAdapterUser = {
       id: new ObjectId().toString(),
       emailVerified: null,

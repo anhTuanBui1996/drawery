@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import Swal from "sweetalert2";
-import { Camera, KeyRound, Link2, Save } from "lucide-react";
+import { Camera, KeyRound, Link2, Save, Trash2 } from "lucide-react";
 import {
   Box,
   Container,
@@ -21,6 +21,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Link } from "@/src/i18n/navigation";
+import ButtonDeleteUser from "@/src/components/client/custom/verification/ButtonDeleteUser";
+import ButtonChangePassword from "@/src/components/client/custom/verification/ButtonChangePassword";
 
 interface ProfileForm {
   firstName: string;
@@ -325,6 +327,7 @@ export default function Profile(): React.JSX.Element {
               />
 
               <Button
+                color="success"
                 variant="contained"
                 fullWidth
                 disabled={isSaving}
@@ -356,34 +359,26 @@ export default function Profile(): React.JSX.Element {
           <Button
             component={Link}
             fullWidth
-            href={`/${session?.user.username}/account`}
-            variant="outlined"
+            href={`/account`}
+            variant="contained"
             startIcon={<Link2 size={16} />}
-            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+            color="secondary"
           >
             {t("manageLinkedAccounts")}
           </Button>
-          <Button
-            component={Link}
-            href="/account/password"
-            fullWidth
-            variant="outlined"
-            startIcon={<KeyRound size={16} />}
-            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
-          >
-            {t("changePassword")}
-          </Button>
-          <Button
-            component={Link}
-            href={`/${session?.user.username}/changePassword`}
-            fullWidth
-            variant="outlined"
-            color="error"
-            startIcon={<KeyRound size={16} />}
-            sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
-          >
-            {t("deleteUser")}
-          </Button>
+          <ButtonChangePassword
+            buttonColor="primary"
+            title={t("changePassword")}
+            buttonIcon={<KeyRound size={16} />}
+            buttonContent={t("changePassword")}
+          />
+          <ButtonDeleteUser
+            buttonColor="error"
+            title={t("deleteUserTitle")}
+            buttonIcon={<Trash2 size={16} />}
+            buttonContent={t("deleteUser")}
+            content={t("deleteUserDesc")}
+          />
         </Stack>
       </Container>
 

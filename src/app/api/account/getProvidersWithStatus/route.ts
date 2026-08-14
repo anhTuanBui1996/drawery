@@ -4,7 +4,7 @@ import client from "@/src/lib/db";
 import { authOptions } from "@/src/lib/auth";
 
 export async function GET() {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
