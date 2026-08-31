@@ -4,10 +4,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { getLocaleFromPathname } from "./lib/utils";
 
-const excludedPathsWithNoToken = ["/signin", "/signup", "/"];
+const excludedPathsWithNoToken = [
+  "/privacy",
+  "/eula",
+  "/signin",
+  "/signup",
+  "/",
+];
 const handleI18nRouting = createMiddleware(routing);
 
-export default async function proxy(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const locale = getLocaleFromPathname(req.nextUrl.pathname);
 

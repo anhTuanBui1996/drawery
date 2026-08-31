@@ -24,18 +24,12 @@ import {
   Chip,
   Avatar,
   Paper,
-  CircularProgress,
 } from "@mui/material";
-import { LoginRounded } from "@mui/icons-material";
-import { Link } from "@/src/i18n/navigation";
 import { useTranslations } from "next-intl";
-import SwitchTheme from "@/src/components/client/layout/SwitchTheme";
-import { useSession } from "next-auth/react";
-import CustomBox from "@/src/components/client/custom/background/CustomBox";
-import LanguageSelector from "@/src/components/client/layout/LanguageSelector";
+import CustomBox from "@/src/components/custom/background/CustomBox";
+import { Link } from "@/src/i18n/navigation";
 
 const Index = () => {
-  const s = useSession();
   const t = useTranslations("/");
   const features = [
     {
@@ -104,65 +98,9 @@ const Index = () => {
       {/* Hero Section */}
       <CustomBox
         sx={{
-          position: "relative",
           overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            zIndex: 1,
-            display: "flex",
-            gap: "10px",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            margin: 4,
-          }}
-        >
-          <SwitchTheme hasBackground={true} />
-          <LanguageSelector />
-        </Box>
-        <Button
-          variant="contained"
-          size="large"
-          endIcon={<LoginRounded />}
-          sx={{
-            px: 2,
-            py: 1,
-            top: 0,
-            right: 0,
-            margin: 4,
-            position: "fixed",
-            borderRadius: 3,
-            fontWeight: 600,
-            fontSize: ".9rem",
-            "&:hover": {
-              transform: "translateY(-2px)",
-              boxShadow: 4,
-            },
-            transition: "all 0.3s",
-            zIndex: 1,
-          }}
-        >
-          {s.status === "loading" ? (
-            <CircularProgress title={t("loading")} />
-          ) : (
-            <Link
-              href={
-                s.status === "authenticated"
-                  ? `/dashboard`
-                  : "/signin"
-              }
-              style={{ color: "inherit", textDecoration: "none" }}
-            >
-              {t(
-                s.status === "authenticated"
-                  ? "buttonBackToDashboard"
-                  : "buttonSignIn",
-              )}
-            </Link>
-          )}
-        </Button>
         <Container
           maxWidth="lg"
           sx={{ position: "relative", py: { xs: 12, lg: 16 } }}
@@ -725,6 +663,22 @@ const Index = () => {
             <Typography variant="body2" sx={{ color: "#bfdbfe" }}>
               {t("ctaCredit")}
             </Typography>
+
+            <Box mt={3}>
+              <Link
+                style={{ marginRight: "20px", textDecoration: "underline" }}
+                href={"/eula"}
+              >
+                {t("linkEula")}
+              </Link>
+              |
+              <Link
+                style={{ marginLeft: "20px", textDecoration: "underline" }}
+                href={"/privacy"}
+              >
+                {t("linkPrivacy")}
+              </Link>
+            </Box>
           </Box>
         </Container>
       </Box>

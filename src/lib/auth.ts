@@ -1,8 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials";
+import NetlifyProvider from "next-auth/providers/netlify";
 import EmailProvider from "next-auth/providers/email";
 import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
-import FacebookProvider from "next-auth/providers/facebook";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import client from "@/src/lib/db";
 import { NextAuthOptions } from "next-auth";
@@ -58,20 +58,20 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM, // địa chỉ gửi mail, ví dụ: "noreply@yourapp.com"
       sendVerificationRequest, // hàm gửi email xác minh
     }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID || "",
-      clientSecret: process.env.GITHUB_SECRET || "",
-      allowDangerousEmailAccountLinking: true, // Cho phép liên kết tài khoản GitHub với email đã tồn tại
+    NetlifyProvider({
+      clientId: process.env.NETLIFY_ID || "",
+      clientSecret: process.env.NETLIFY_SECRET || "",
+      allowDangerousEmailAccountLinking: true, // Cho phép liên kết tài khoản Google với email đã tồn tại
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_ID || "",
       clientSecret: process.env.GOOGLE_SECRET || "",
       allowDangerousEmailAccountLinking: true, // Cho phép liên kết tài khoản Google với email đã tồn tại
     }),
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_ID || "",
-      clientSecret: process.env.FACEBOOK_SECRET || "",
-      allowDangerousEmailAccountLinking: true, // Cho phép liên kết tài khoản Facebook với email đã tồn tại
+    GithubProvider({
+      clientId: process.env.GITHUB_ID || "",
+      clientSecret: process.env.GITHUB_SECRET || "",
+      allowDangerousEmailAccountLinking: true, // Cho phép liên kết tài khoản GitHub với email đã tồn tại
     }),
   ],
   callbacks: {

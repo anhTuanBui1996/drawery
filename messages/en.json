@@ -6,7 +6,10 @@
     "darkMode": "Dark",
     "lightMode": "Light",
     "dashboard": "Dashboard",
-    "about": "About"
+    "about": "About",
+    "logOutSuccessfully": "Sign out successfully!",
+    "eula": "End-User License Agreement",
+    "privacy": "Privacy Policy"
   },
   "LanguageSelector": {
     "title": "Select language"
@@ -68,7 +71,9 @@
     "ctaSubtitle": "Join thousands of professionals who have streamlined their database design workflow with our tool.",
     "ctaButton": "Get Started Free",
     "ctaButtonDemo": "Schedule Demo",
-    "ctaCredit": "No credit card required • 14-day free trial • Cancel anytime"
+    "ctaCredit": "No credit card required • 14-day free trial • Cancel anytime",
+    "linkEula": "End-User License Agreement",
+    "linkPrivacy": "Privacy Policy"
   },
   "SignUp": {
     "alertRegistration": "Registration",
@@ -117,12 +122,14 @@
     "connectedAccountsDesc": "Link more for faster sign-in",
     "linked": "Linked",
     "notLinked": "Not Linked",
+    "linkedSuccess": "Linked {providerName} account successfully",
+    "linkedFail": "Linked {providerName} account failed ",
     "linkButton": "Link",
     "unlinkButton": "Unlink",
     "lastMethodNotice": "This is the only sign-in method, cannot unlink",
     "changePassword": "Change Password",
     "confirmUnlinkTitle": "Confirm Unlink",
-    "confirmUnlinkText": "You will not be able to sign in with {provider} anymore.",
+    "confirmUnlinkText": "You will not be able to sign in with {providerName} anymore.",
     "confirmUnlinkButton": "Unlink",
     "cancelButton": "Close",
     "emailVerified": "Email verified",
@@ -167,5 +174,150 @@
     "submit": "Submit",
     "cancel": "Cancel",
     "signOutAllDevices": "Sign out all of devices after change password"
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "How we collect, use, and protect your data",
+    "lastUpdated": "Last updated: August 16, 2026",
+    "intro": "Drawery respects your privacy. This policy explains what information we collect when you use our service, how we use it, and the rights you have over your data.",
+    "sections": [
+      {
+        "title": "Information We Collect",
+        "paragraphs": [
+          "When you create an account, we collect your name, email address, and a hashed password (if you sign up with email/password).",
+          "When you sign in with Google, GitHub, or Facebook, we receive your name, email, and public profile picture from that provider, within the scope of permissions you granted.",
+          "We collect additional information you choose to provide, such as your phone number, a short bio, and an uploaded profile picture."
+        ]
+      },
+      {
+        "title": "Cookies and Tracking Technologies",
+        "paragraphs": [
+          "We use session cookies to keep you signed in between visits.",
+          "We do not use advertising or third-party tracking cookies for marketing purposes."
+        ]
+      },
+      {
+        "title": "Sharing Information with Third Parties",
+        "paragraphs": [
+          "We do not sell or rent your personal data to any third party.",
+          "Your data is stored on MongoDB Atlas and Vercel Blob (for profile pictures) infrastructure — these providers process data on our behalf, subject to their own privacy policies.",
+          "We may share information if required by law, or to protect the legal rights of Drawery and our users."
+        ]
+      },
+      {
+        "title": "Data Retention",
+        "paragraphs": [
+          "We retain your account information for as long as your account remains active.",
+          "After you delete your account, your personal data will be permanently removed from our systems within 30 days, unless a longer retention period is required by law."
+        ]
+      },
+      {
+        "title": "Your Rights",
+        "paragraphs": [
+          "You may access and update your personal information at any time from your Profile page.",
+          "You may request the deletion of your entire account and associated data through the account deletion feature in the app.",
+          "You may unlink any sign-in method (Google, GitHub, Facebook) as long as at least one other method remains linked to your account."
+        ]
+      },
+      {
+        "title": "Children's Privacy",
+        "paragraphs": [
+          "Our service is not intended for users under the age of 13. We do not knowingly collect information from children under this age."
+        ]
+      },
+      {
+        "title": "Changes to This Policy",
+        "paragraphs": [
+          "We may update this policy from time to time. Any material changes will be communicated via email or an in-app notice."
+        ]
+      }
+    ],
+    "contactTitle": "Contact Us",
+    "contactDesc": "If you have any questions about this privacy policy, please contact us at",
+    "contactEmail": "anbuta.it@gmail.com"
+  },
+  "Eula": {
+    "title": "End User License Agreement",
+    "subtitle": "The terms governing your use of Drawery",
+    "lastUpdated": "Last updated: August 16, 2026",
+    "intro": "By creating an account or using Drawery, you agree to be bound by the terms below. Please read them carefully before continuing to use the service.",
+    "sections": [
+      {
+        "title": "License Grant",
+        "paragraphs": [
+          "We grant you a limited, non-exclusive, non-transferable license to use Drawery for your personal or internal organizational purposes.",
+          "You may not copy, modify, redistribute, reverse engineer, or otherwise exploit the service's source code beyond what is permitted by law."
+        ]
+      },
+      {
+        "title": "User Accounts",
+        "paragraphs": [
+          "You are responsible for keeping your login credentials secure, including your password and any linked sign-in methods (Google, GitHub, Facebook).",
+          "You must provide accurate information when registering and keep it up to date if it changes.",
+          "You are responsible for all activity that occurs under your account."
+        ]
+      },
+      {
+        "title": "Prohibited Conduct",
+        "paragraphs": [
+          "Do not use the service for any unlawful, fraudulent, or harmful purpose.",
+          "Do not attempt to gain unauthorized access to our systems, other users' accounts, or our databases.",
+          "Do not distribute malware, spam, or content that violates applicable law through the service."
+        ]
+      },
+      {
+        "title": "User Content",
+        "paragraphs": [
+          "You retain full ownership of the content you create or upload (e.g., ERD diagrams, profile pictures).",
+          "By uploading content, you grant us a license to store and display that content for the purpose of providing the service to you.",
+          "You represent that any content you upload does not infringe on intellectual property rights or violate applicable law."
+        ]
+      },
+      {
+        "title": "Intellectual Property",
+        "paragraphs": [
+          "All source code, interface design, trademarks, and logos of Drawery are owned by us.",
+          "Nothing in this agreement shall be construed as transferring any intellectual property rights to you."
+        ]
+      },
+      {
+        "title": "Account Termination",
+        "paragraphs": [
+          "You may delete your account at any time using the account deletion feature in the app.",
+          "We reserve the right to suspend or terminate your account if we determine you have violated these terms."
+        ]
+      },
+      {
+        "title": "Disclaimer of Warranties",
+        "paragraphs": [
+          "The service is provided \"as is\" and \"as available\", without warranties of any kind, whether express or implied.",
+          "We do not warrant that the service will be uninterrupted, error-free, or will meet your specific requirements."
+        ]
+      },
+      {
+        "title": "Limitation of Liability",
+        "paragraphs": [
+          "To the maximum extent permitted by law, Drawery shall not be liable for any indirect, incidental, or consequential damages arising from your use or inability to use the service."
+        ]
+      },
+      {
+        "title": "Governing Law",
+        "paragraphs": [
+          "This agreement shall be governed by and construed in accordance with applicable law, without regard to its conflict of law principles."
+        ]
+      },
+      {
+        "title": "Changes to These Terms",
+        "paragraphs": [
+          "We may update these terms from time to time. Continued use of the service after changes take effect constitutes your acceptance of the revised terms."
+        ]
+      }
+    ],
+    "contactTitle": "Contact Us",
+    "contactDesc": "If you have any questions about this agreement, please contact us at",
+    "contactEmail": "anbuta.it@gmail.com"
+  },
+  "Dashboard": {
+    "myDiagrams": "My Diagrams"
   }
 }

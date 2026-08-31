@@ -7,7 +7,7 @@ import {
   Button,
   CircularProgress,
   Backdrop,
-  Box,
+  Skeleton,
 } from "@mui/material";
 import {
   ChangeEvent,
@@ -15,48 +15,63 @@ import {
   KeyboardEvent,
   useEffect,
   useState,
-  use,
 } from "react";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { grey } from "@mui/material/colors";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@/src/components/client/custom/icon/GoogleIcon";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import { signIn, useSession } from "next-auth/react";
+import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
+import { SiNetlify as NetlifyIcon } from "react-icons/si";
+import AppLogo from "@/src/components/layout/AppLogo";
 import Swal from "sweetalert2";
+import {
+  ClientSafeProvider,
+  getProviders,
+  LiteralUnion,
+  signIn,
+  useSession,
+} from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/src/i18n/navigation";
-import AppLogo from "@/src/components/client/layout/AppLogo";
-import SwitchTheme from "@/src/components/client/layout/SwitchTheme";
+import { useSnackbar } from "notistack";
+import { BuiltInProviderType } from "next-auth/providers/index";
+import CustomBox from "@/src/components/custom/background/CustomBox";
 
 type User = {
   username: string;
   password: string;
 };
 
-const theme = createTheme({
-  palette: {
-    secondary: {
-      main: grey[700],
-    },
-  },
-});
-
-const callbackUrl = "/dashboard";
+const defaultCallBack = "/dashboard";
 
 export default function SignIn({
   callback,
-  params,
 }: Readonly<{
   callback: string | undefined;
-  params: Promise<{ locale: string; username: string }>;
 }>) {
   const router = useRouter();
   const session = useSession();
   const t = useTranslations("SignIn");
+  const { enqueueSnackbar } = useSnackbar();
+
+  const [user, setUser] = useState<User>({ username: "", password: "" });
+  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
+  const [providers, setProviders] = useState<Record<
+    LiteralUnion<BuiltInProviderType, string>,
+    ClientSafeProvider
+  > | null>(null);
+  const fetchProviders = async () => {
+    setProviders(await getProviders());
+  };
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
+
   useEffect(() => {
     switch (session.status) {
       case "authenticated":
+        enqueueSnackbar({
+          variant: "success",
+          message: t("alertLoginSuccess"),
+        });
         router.push(callback || `/dashboard`);
         break;
       case "loading":
@@ -67,9 +82,6 @@ export default function SignIn({
         break;
     }
   }, [session.status]);
-
-  const [user, setUser] = useState<User>({ username: "", password: "" });
-  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
 
   const handleChangUsernameInput = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -96,7 +108,7 @@ export default function SignIn({
     setIsAuthenticating(true);
     signIn("credentials", {
       ...user,
-      callbackUrl,
+      defaultCallBack,
       redirect: false,
     }).then((result) => {
       setIsAuthenticating(false);
@@ -123,35 +135,8 @@ export default function SignIn({
     mainLoginFlow();
   };
 
-  const handleGithubLoginClick = () => {
-    signIn("github", { callbackUrl }).then((result) => {
-      setIsAuthenticating(false);
-      if (!result?.ok && result?.error) {
-        Swal.fire({
-          icon: "error",
-          title: t("alertErrorTitle"),
-          text: result?.error || t("alertError"),
-        });
-      }
-    });
-  };
-
-  const handleGoogleLoginClick = () => {
-    setIsAuthenticating(true);
-    signIn("google", { callbackUrl }).then((result) => {
-      setIsAuthenticating(false);
-      if (!result?.ok && result?.error) {
-        Swal.fire({
-          icon: "error",
-          title: t("alertErrorTitle"),
-          text: result?.error || t("alertError"),
-        });
-      }
-    });
-  };
-
-  const handleFacebookLoginClick = () => {
-    signIn("facebook", { callbackUrl }).then((result) => {
+  const handleOAuthSignIn = (provider: string) => {
+    signIn(provider, { defaultCallBack }).then((result) => {
       setIsAuthenticating(false);
       if (!result?.ok && result?.error) {
         Swal.fire({
@@ -164,22 +149,13 @@ export default function SignIn({
   };
 
   return (
-    <div
+    <CustomBox
       className="flex h-screen flex-col items-center justify-between"
-      style={{
+      sx={{
         background:
           "linear-gradient(135deg, #aabdf3 0%, #2f4975 50%, #06b6d4 100%)",
       }}
     >
-      <Box
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-        }}
-      >
-        <SwitchTheme />
-      </Box>
       <Paper
         sx={{
           width: "30%",
@@ -193,6 +169,7 @@ export default function SignIn({
         }}
       >
         <Typography
+          component={"span"}
           fontSize={20}
           textAlign={"center"}
           paddingTop={4}
@@ -295,37 +272,54 @@ export default function SignIn({
                 </Typography>
               </Paper>
             </legend>
-            <ThemeProvider theme={theme}>
-              <Button
-                variant="contained"
-                color="secondary"
-                fullWidth
-                onClick={handleGithubLoginClick}
-                startIcon={<GitHubIcon />}
-              >
-                Github
-              </Button>
-              <Button
-                variant="contained"
-                color="inherit"
-                fullWidth
-                onClick={handleGoogleLoginClick}
-                startIcon={<GoogleIcon />}
-                sx={{ marginY: "10px" }}
-              >
-                Google
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                type="submit"
-                onClick={handleFacebookLoginClick}
-                startIcon={<FacebookIcon />}
-              >
-                Facebook
-              </Button>
-            </ThemeProvider>
+            {providers ? (
+              Object.values(providers)
+                .filter((p) => p.id !== "email" && p.id !== "credentials")
+                .map(({ id, name }) => {
+                  let icon;
+                  switch (id) {
+                    case "google":
+                      icon = <GoogleIcon />;
+                      break;
+                    case "github":
+                      icon = <GitHubIcon />;
+                      break;
+                    default:
+                      icon = <NetlifyIcon />;
+                  }
+                  return (
+                    <Button
+                      key={id}
+                      variant="contained"
+                      color="inherit"
+                      fullWidth
+                      onClick={() => handleOAuthSignIn(id)}
+                      startIcon={icon}
+                      sx={{ marginTop: "10px" }}
+                    >
+                      {name}
+                    </Button>
+                  );
+                })
+            ) : (
+              <>
+                <Skeleton
+                  variant="rounded"
+                  height={"34.5px"}
+                  sx={{ marginTop: "10px" }}
+                />
+                <Skeleton
+                  variant="rounded"
+                  height={"34.5px"}
+                  sx={{ marginTop: "10px" }}
+                />
+                <Skeleton
+                  variant="rounded"
+                  height={"34.5px"}
+                  sx={{ marginTop: "10px" }}
+                />
+              </>
+            )}
           </fieldset>
         </div>
       </Paper>
@@ -335,6 +329,6 @@ export default function SignIn({
       >
         <CircularProgress color="inherit" />
       </Backdrop>
-    </div>
+    </CustomBox>
   );
 }

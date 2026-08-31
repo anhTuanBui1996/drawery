@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import client from "@/src/lib/db";
 import { authOptions } from "@/src/lib/auth";
+import { getTranslations } from "next-intl/server";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
+  const t = await getTranslations("Profile");
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -44,10 +46,7 @@ export async function GET() {
 
     return NextResponse.json({ providers });
   } catch (err) {
-    console.error("GET /api/account/linked-providers error:", err);
-    return NextResponse.json(
-      { error: "Đã có lỗi xảy ra, vui lòng thử lại" },
-      { status: 500 },
-    );
+    console.error("GET /api/account/getProvidersWithStatus error:", err);
+    return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

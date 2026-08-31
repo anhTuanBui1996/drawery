@@ -21,8 +21,9 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Link } from "@/src/i18n/navigation";
-import ButtonDeleteUser from "@/src/components/client/custom/verification/ButtonDeleteUser";
-import ButtonChangePassword from "@/src/components/client/custom/verification/ButtonChangePassword";
+import ButtonDeleteUser from "@/src/components/custom/verification/ButtonDeleteUser";
+import ButtonChangePassword from "@/src/components/custom/verification/ButtonChangePassword";
+import { useSnackbar } from "notistack";
 
 interface ProfileForm {
   firstName: string;
@@ -35,6 +36,7 @@ interface ProfileForm {
 export default function Profile(): React.JSX.Element {
   const { data: session, status, update } = useSession();
   const t = useTranslations("Profile");
+  const { enqueueSnackbar } = useSnackbar();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProfileForm>({
@@ -102,12 +104,19 @@ export default function Profile(): React.JSX.Element {
       const data = await res.json();
 
       if (res.ok) {
-        await update({ image: data.imageUrl });
-        Swal.fire({
-          icon: "success",
-          title: t("alertSuccessTitle"),
-          text: t("alertAvatarSuccess"),
-        });
+        const newSession = await update({ image: data.imageUrl });
+        if (newSession) {
+          enqueueSnackbar({
+            variant: "success",
+            message: t("alertAvatarSuccess"),
+          });
+        } else {
+          console.error("Can't update session!")
+          enqueueSnackbar({
+            variant: "error",
+            message: t("alertError"),
+          });
+        }
       } else {
         Swal.fire({
           icon: "error",

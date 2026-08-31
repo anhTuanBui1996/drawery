@@ -87,7 +87,11 @@ export default function SwitchTheme({
         borderRadius: 3,
         px: 0.5,
         bgcolor: hasBackground ? "background.paper" : undefined,
-        boxShadow: hasBackground ? 4 : undefined,
+        transition: "all 0.3s",
+        "&:hover": {
+          transform: hasBackground ? "translateY(-2px)" : undefined,
+          boxShadow: hasBackground ? 4 : undefined,
+        },
         width: "125px",
       }}
     >

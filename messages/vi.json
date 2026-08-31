@@ -6,7 +6,10 @@
     "darkMode": "Tối",
     "lightMode": "Sáng",
     "dashboard": "Bảng điều khiển",
-    "about": "Trang giới thiệu"
+    "about": "Trang giới thiệu",
+    "logOutSuccessfully": "Đăng xuất thành công!",
+    "eula": "Thỏa thuận giấy phép người dùng cuối",
+    "privacy": "Chính sách quyền riêng tư"
   },
   "LanguageSelector": {
     "title": "Chọn ngôn ngữ"
@@ -68,7 +71,9 @@
     "ctaSubtitle": "Tham gia cùng hàng ngàn chuyên gia đã tối ưu hóa quy trình thiết kế cơ sở dữ liệu của họ với công cụ của chúng tôi.",
     "ctaButton": "Bắt đầu miễn phí",
     "ctaButtonDemo": "Đặt lịch demo",
-    "ctaCredit": "Không cần thẻ tín dụng • Dùng thử miễn phí 14 ngày • Hủy bất cứ lúc nào"
+    "ctaCredit": "Không cần thẻ tín dụng • Dùng thử miễn phí 14 ngày • Hủy bất cứ lúc nào",
+    "linkEula": "Thỏa thuận giấy phép người dùng cuối",
+    "linkPrivacy": "Chính sách quyền riêng tư"
   },
   "SignUp": {
     "alertRegistration": "Đăng ký",
@@ -117,12 +122,14 @@
     "connectedAccountsDesc": "Liên kết thêm để đăng nhập nhanh hơn",
     "linked": "Đã liên kết",
     "notLinked": "Chưa liên kết",
+    "linkedSuccess": "Liên kết tài khoản {providerName} thành công ",
+    "linkedFail": "Liên kết tài khoản {providerName} thất bại ",
     "linkButton": "Liên kết",
     "unlinkButton": "Hủy liên kết",
     "lastMethodNotice": "Đây là phương thức đăng nhập duy nhất, không thể hủy liên kết",
     "changePassword": "Đổi mật khẩu",
     "confirmUnlinkTitle": "Xác nhận hủy liên kết",
-    "confirmUnlinkText": "Bạn sẽ không thể đăng nhập bằng {provider} nữa",
+    "confirmUnlinkText": "Bạn sẽ không thể đăng nhập bằng {providerName} nữa",
     "confirmUnlinkButton": "Hủy liên kết",
     "cancelButton": "Đóng",
     "emailVerified": "Đã xác thực email",
@@ -167,5 +174,150 @@
     "submit": "Xác nhận",
     "cancel": "Hủy",
     "signOutAllDevices": "Đăng xuất khỏi tất cả thiết bị sau khi đổi mật khẩu"
+  },
+  "Privacy": {
+    "title": "Chính sách bảo mật",
+    "subtitle": "Cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn",
+    "lastUpdated": "Cập nhật lần cuối: 16/08/2026",
+    "intro": "Drawery tôn trọng quyền riêng tư của bạn. Chính sách này giải thích những thông tin chúng tôi thu thập khi bạn sử dụng dịch vụ, cách chúng tôi sử dụng chúng, và các quyền bạn có đối với dữ liệu của mình.",
+    "sections": [
+      {
+        "title": "Thông tin chúng tôi thu thập",
+        "paragraphs": [
+          "Khi bạn đăng ký tài khoản, chúng tôi thu thập tên, địa chỉ email, và mật khẩu đã mã hóa (nếu đăng ký bằng email/mật khẩu).",
+          "Khi bạn đăng nhập bằng Google, GitHub hoặc Facebook, chúng tôi nhận tên, email và ảnh đại diện công khai từ nhà cung cấp đó, theo đúng phạm vi quyền bạn đã cấp phép.",
+          "Chúng tôi thu thập các thông tin bạn chủ động cung cấp thêm như số điện thoại, giới thiệu bản thân, và ảnh đại diện tải lên."
+        ]
+      },
+      {
+        "title": "Cookie và công nghệ theo dõi",
+        "paragraphs": [
+          "Chúng tôi sử dụng cookie phiên đăng nhập (session cookie) để giữ bạn ở trạng thái đã đăng nhập giữa các lần truy cập.",
+          "Chúng tôi không sử dụng cookie quảng cáo hoặc theo dõi bên thứ ba cho mục đích tiếp thị."
+        ]
+      },
+      {
+        "title": "Chia sẻ thông tin với bên thứ ba",
+        "paragraphs": [
+          "Chúng tôi không bán hoặc cho thuê dữ liệu cá nhân của bạn cho bất kỳ bên thứ ba nào.",
+          "Dữ liệu được lưu trữ trên hạ tầng MongoDB Atlas và Vercel Blob (cho ảnh đại diện) — các nhà cung cấp này chỉ xử lý dữ liệu thay mặt chúng tôi, tuân theo chính sách bảo mật riêng của họ.",
+          "Chúng tôi có thể chia sẻ thông tin nếu pháp luật yêu cầu, hoặc để bảo vệ quyền lợi hợp pháp của Drawery và người dùng."
+        ]
+      },
+      {
+        "title": "Thời gian lưu trữ dữ liệu",
+        "paragraphs": [
+          "Chúng tôi lưu trữ thông tin tài khoản của bạn cho đến khi bạn chủ động xóa tài khoản.",
+          "Sau khi xóa tài khoản, dữ liệu cá nhân sẽ được xóa vĩnh viễn khỏi hệ thống của chúng tôi trong vòng 30 ngày, trừ trường hợp pháp luật yêu cầu lưu giữ lâu hơn."
+        ]
+      },
+      {
+        "title": "Quyền của bạn",
+        "paragraphs": [
+          "Bạn có quyền truy cập, chỉnh sửa thông tin cá nhân của mình bất kỳ lúc nào trong phần Hồ sơ cá nhân.",
+          "Bạn có quyền yêu cầu xóa toàn bộ tài khoản và dữ liệu liên quan thông qua tính năng xóa tài khoản trong ứng dụng.",
+          "Bạn có quyền hủy liên kết bất kỳ phương thức đăng nhập nào (Google, GitHub, Facebook) miễn còn ít nhất một phương thức khác."
+        ]
+      },
+      {
+        "title": "Trẻ em",
+        "paragraphs": [
+          "Dịch vụ của chúng tôi không dành cho người dùng dưới 13 tuổi. Chúng tôi không cố ý thu thập thông tin từ trẻ em dưới độ tuổi này."
+        ]
+      },
+      {
+        "title": "Thay đổi chính sách",
+        "paragraphs": [
+          "Chúng tôi có thể cập nhật chính sách này theo thời gian. Mọi thay đổi quan trọng sẽ được thông báo qua email hoặc thông báo trên ứng dụng."
+        ]
+      }
+    ],
+    "contactTitle": "Liên hệ",
+    "contactDesc": "Nếu bạn có câu hỏi về chính sách bảo mật này, vui lòng liên hệ",
+    "contactEmail": "anbuta.it@gmail.com"
+  },
+  "Eula": {
+    "title": "Điều khoản sử dụng",
+    "subtitle": "Thỏa thuận cấp phép người dùng cuối khi sử dụng Drawery",
+    "lastUpdated": "Cập nhật lần cuối: 16/08/2026",
+    "intro": "Bằng việc tạo tài khoản hoặc sử dụng Drawery, bạn đồng ý tuân thủ các điều khoản dưới đây. Vui lòng đọc kỹ trước khi tiếp tục sử dụng dịch vụ.",
+    "sections": [
+      {
+        "title": "Cấp phép sử dụng",
+        "paragraphs": [
+          "Chúng tôi cấp cho bạn quyền sử dụng Drawery có giới hạn, không độc quyền, không thể chuyển nhượng, chỉ nhằm mục đích cá nhân hoặc nội bộ tổ chức của bạn.",
+          "Bạn không được sao chép, chỉnh sửa, phân phối lại, dịch ngược (reverse engineer) hoặc khai thác mã nguồn của dịch vụ ngoài phạm vi được pháp luật cho phép."
+        ]
+      },
+      {
+        "title": "Tài khoản người dùng",
+        "paragraphs": [
+          "Bạn chịu trách nhiệm bảo mật thông tin đăng nhập của mình, bao gồm mật khẩu và các phương thức đăng nhập liên kết (Google, GitHub, Facebook).",
+          "Bạn phải cung cấp thông tin chính xác khi đăng ký và cập nhật kịp thời nếu có thay đổi.",
+          "Bạn chịu trách nhiệm cho mọi hoạt động diễn ra dưới tài khoản của mình."
+        ]
+      },
+      {
+        "title": "Hành vi bị cấm",
+        "paragraphs": [
+          "Không sử dụng dịch vụ cho mục đích bất hợp pháp, gian lận, hoặc gây hại cho người khác.",
+          "Không cố gắng truy cập trái phép vào hệ thống, tài khoản người dùng khác, hoặc cơ sở dữ liệu của chúng tôi.",
+          "Không phát tán mã độc, spam, hoặc nội dung vi phạm pháp luật thông qua dịch vụ."
+        ]
+      },
+      {
+        "title": "Nội dung người dùng",
+        "paragraphs": [
+          "Bạn giữ toàn quyền sở hữu đối với nội dung bạn tạo ra hoặc tải lên (ví dụ: sơ đồ ERD, ảnh đại diện).",
+          "Bằng việc tải nội dung lên, bạn cấp cho chúng tôi quyền lưu trữ và hiển thị nội dung đó nhằm mục đích cung cấp dịch vụ cho bạn.",
+          "Bạn cam kết nội dung tải lên không vi phạm quyền sở hữu trí tuệ hoặc pháp luật hiện hành."
+        ]
+      },
+      {
+        "title": "Quyền sở hữu trí tuệ",
+        "paragraphs": [
+          "Toàn bộ mã nguồn, thiết kế giao diện, thương hiệu và logo của Drawery thuộc quyền sở hữu của chúng tôi.",
+          "Không có nội dung nào trong điều khoản này được hiểu là chuyển nhượng quyền sở hữu trí tuệ cho bạn."
+        ]
+      },
+      {
+        "title": "Chấm dứt tài khoản",
+        "paragraphs": [
+          "Bạn có thể xóa tài khoản của mình bất kỳ lúc nào thông qua tính năng xóa tài khoản trong ứng dụng.",
+          "Chúng tôi có quyền tạm ngưng hoặc chấm dứt tài khoản của bạn nếu phát hiện vi phạm các điều khoản này."
+        ]
+      },
+      {
+        "title": "Miễn trừ bảo đảm",
+        "paragraphs": [
+          "Dịch vụ được cung cấp theo nguyên trạng (\"as is\") và theo khả năng sẵn có (\"as available\"), không kèm theo bất kỳ bảo đảm nào, dù rõ ràng hay ngụ ý.",
+          "Chúng tôi không đảm bảo dịch vụ sẽ hoạt động không gián đoạn, không có lỗi, hoặc đáp ứng mọi nhu cầu cụ thể của bạn."
+        ]
+      },
+      {
+        "title": "Giới hạn trách nhiệm",
+        "paragraphs": [
+          "Trong phạm vi tối đa pháp luật cho phép, Drawery không chịu trách nhiệm cho bất kỳ thiệt hại gián tiếp, ngẫu nhiên, hoặc hệ quả nào phát sinh từ việc sử dụng hoặc không thể sử dụng dịch vụ."
+        ]
+      },
+      {
+        "title": "Luật áp dụng",
+        "paragraphs": [
+          "Điều khoản này được điều chỉnh và giải thích theo pháp luật hiện hành, không phụ thuộc vào các nguyên tắc xung đột pháp luật."
+        ]
+      },
+      {
+        "title": "Thay đổi điều khoản",
+        "paragraphs": [
+          "Chúng tôi có thể cập nhật điều khoản này theo thời gian. Việc tiếp tục sử dụng dịch vụ sau khi thay đổi có hiệu lực đồng nghĩa với việc bạn chấp nhận điều khoản mới."
+        ]
+      }
+    ],
+    "contactTitle": "Liên hệ",
+    "contactDesc": "Nếu bạn có câu hỏi về điều khoản sử dụng này, vui lòng liên hệ",
+    "contactEmail": "anbuta.it@gmail.com"
+  },
+  "Dashboard": {
+    "myDiagrams": "Các lược đồ quan hệ của bạn"
   }
 }

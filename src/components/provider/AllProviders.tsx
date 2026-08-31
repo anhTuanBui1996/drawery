@@ -1,10 +1,12 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import HeaderToggle from "@/src/components/client/layout/HeaderToggle";
-import { EmotionProvider } from "@/src/components/client/provider/EmotionProvider";
+import HeaderToggle from "@/src/components/layout/HeaderToggle";
+import { EmotionProvider } from "@/src/components/provider/EmotionProvider";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import LoaderProvider from "./LoaderProvider";
+import { SnackbarProvider } from "notistack";
+import { grey } from "@mui/material/colors";
 
 const theme = createTheme({
   colorSchemes: {
@@ -12,6 +14,11 @@ const theme = createTheme({
     light: true,
   },
   defaultColorScheme: "light",
+  palette: {
+    secondary: {
+      main: grey[700],
+    },
+  },
 });
 
 export function Providers({
@@ -25,9 +32,11 @@ export function Providers({
     <SessionProvider>
       <EmotionProvider>
         <ThemeProvider theme={theme} defaultMode="light">
-          <HeaderToggle locale={locale}>
-            <LoaderProvider>{children}</LoaderProvider>
-          </HeaderToggle>
+          <SnackbarProvider maxSnack={3}>
+            <HeaderToggle locale={locale}>
+              <LoaderProvider>{children}</LoaderProvider>
+            </HeaderToggle>
+          </SnackbarProvider>
         </ThemeProvider>
       </EmotionProvider>
     </SessionProvider>

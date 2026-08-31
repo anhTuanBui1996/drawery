@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "@/src/i18n/navigation";
-import { randomDigit } from "@/src/lib/utils";
+import { randomInt } from "@/src/lib/utils";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
   Button,

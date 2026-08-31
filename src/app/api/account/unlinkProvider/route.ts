@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/src/lib/auth";
 import client from "@/src/lib/db";
 
-const OAUTH_PROVIDERS = ["google", "github", "facebook"];
+const OAUTH_PROVIDERS = authOptions.providers.map((p) => p.id);
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);

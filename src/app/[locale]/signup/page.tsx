@@ -11,25 +11,24 @@ import {
   Typography,
   Stack,
   Card as MuiCard,
+  Skeleton,
 } from "@mui/material";
-import { createTheme, styled, ThemeProvider } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import { FaFacebook } from "react-icons/fa6";
-import GoogleIcon from "@/src/components/client/custom/icon/GoogleIcon";
-import { grey } from "@mui/material/colors";
+import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
+import { SiNetlify as NetlifyIcon } from "react-icons/si";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/src/i18n/navigation";
 import Swal from "sweetalert2";
-import { signIn } from "next-auth/react";
-import AppLogo from "@/src/components/client/layout/AppLogo";
-
-const theme = createTheme({
-  palette: {
-    secondary: {
-      main: grey[700],
-    },
-  },
-});
+import {
+  ClientSafeProvider,
+  getProviders,
+  LiteralUnion,
+  signIn,
+} from "next-auth/react";
+import AppLogo from "@/src/components/layout/AppLogo";
+import CustomBox from "@/src/components/custom/background/CustomBox";
+import { BuiltInProviderType } from "next-auth/providers/index";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -49,6 +48,8 @@ const Card = styled(MuiCard)(({ theme }) => ({
       "hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px",
   }),
 }));
+
+const defaultCallBack = "/dashboard";
 
 const SignUpContainer = styled(Stack)(({ theme }) => ({
   height: "calc((1 - var(--template-frame-height, 0)) * 100dvh)",
@@ -85,6 +86,17 @@ export default function SignUp(): React.JSX.Element {
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState("");
+  const [providers, setProviders] = React.useState<Record<
+    LiteralUnion<BuiltInProviderType, string>,
+    ClientSafeProvider
+  > | null>(null);
+  const fetchProviders = async () => {
+    setProviders(await getProviders());
+  };
+
+  React.useEffect(() => {
+    fetchProviders();
+  }, []);
 
   const validateInputs = () => {
     const email = document.getElementById("email") as HTMLInputElement;
@@ -189,149 +201,162 @@ export default function SignUp(): React.JSX.Element {
       });
   };
 
+  const handleOAuthSignIn = (provider: string) => {
+    signIn(provider, { defaultCallBack }).then((result) => {
+      if (!result?.ok && result?.error) {
+        Swal.fire({
+          icon: "error",
+          title: t("alertErrorTitle"),
+          text: result?.error || t("alertError"),
+        });
+      }
+    });
+  };
+
   return (
-    <SignUpContainer
-      direction="column"
-      justifyContent="space-between"
-      sx={{
-        background:
-          "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #06b6d4 100%)",
-      }}
-    >
-      <Card variant="outlined">
-        <AppLogo />
-        <Typography
-          component="h1"
-          variant="h4"
-          sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
-        >
-          Sign up
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-        >
-          <TextField
-            autoComplete="name"
-            name="firstname"
-            required
-            fullWidth
-            label={`${t("firstName")}`}
-            id="firstname"
-            placeholder="An"
-            error={nameError}
-            helperText={nameErrorMessage}
-            color={nameError ? "error" : "primary"}
-          />
-          <TextField
-            autoComplete="name"
-            name="lastname"
-            required
-            fullWidth
-            label={`${t("lastName")}`}
-            id="lastname"
-            placeholder="Tun (optional)"
-          />
-          <TextField
-            required
-            fullWidth
-            id="email"
-            placeholder="your@email.com"
-            name="email"
-            autoComplete="email"
-            label={`${t("email")}`}
-            error={emailError}
-            helperText={emailErrorMessage}
-            color={passwordError ? "error" : "primary"}
-          />
-          <TextField
-            required
-            fullWidth
-            id="username"
-            placeholder="yourusername"
-            name="username"
-            autoComplete="username"
-            label={`${t("username")}`}
-            error={usernameError}
-            helperText={usernameErrorMessage}
-            color={passwordError ? "error" : "primary"}
-          />
-          <TextField
-            required
-            fullWidth
-            name="password"
-            placeholder="••••••"
-            type="password"
-            id="password"
-            autoComplete="new-password"
-            label={`${t("password")}`}
-            variant="outlined"
-            error={passwordError}
-            helperText={passwordErrorMessage}
-            color={passwordError ? "error" : "primary"}
-          />
-          <FormControlLabel
-            control={<Checkbox value="allowExtraEmails" color="primary" />}
-            label="I want to receive updates via email."
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            onClick={validateInputs}
+    <CustomBox>
+      <SignUpContainer direction="column" justifyContent="space-between">
+        <Card variant="outlined">
+          <AppLogo />
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
           >
             Sign up
-          </Button>
-        </Box>
-        <Divider>
-          <Typography sx={{ color: "text.secondary" }}>or</Typography>
-        </Divider>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <ThemeProvider theme={theme}>
-            <Button
-              variant="contained"
-              color="secondary"
-              fullWidth
-              onClick={() => alert("Sign up with Github")}
-              startIcon={<GitHubIcon htmlColor="#000000" />}
-            >
-              Sign in with Github
-            </Button>
-            <Button
-              variant="contained"
-              color="inherit"
-              fullWidth
-              onClick={() => alert("Sign up with Google")}
-              startIcon={<GoogleIcon />}
-            >
-              Sign in with Google
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={() => alert("Sign up with Facebook")}
-              startIcon={<FaFacebook />}
-            >
-              Sign in with Facebook
-            </Button>
-          </ThemeProvider>
-          <Typography sx={{ textAlign: "center" }}>
-            Already have an account?{" "}
-            <Link
-              href="/signin"
-              style={{
-                fontSize: "12px",
-                fontFamily: "'Roboto','Helvetica','Arial',sans-serif",
-                textDecoration: "underline",
-              }}
-            >
-              Sign in
-            </Link>
           </Typography>
-        </Box>
-      </Card>
-    </SignUpContainer>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+          >
+            <TextField
+              autoComplete="name"
+              name="firstname"
+              required
+              fullWidth
+              label={`${t("firstName")}`}
+              id="firstname"
+              placeholder="An"
+              error={nameError}
+              helperText={nameErrorMessage}
+              color={nameError ? "error" : "primary"}
+            />
+            <TextField
+              autoComplete="name"
+              name="lastname"
+              required
+              fullWidth
+              label={`${t("lastName")}`}
+              id="lastname"
+              placeholder="Tun (optional)"
+            />
+            <TextField
+              required
+              fullWidth
+              id="email"
+              placeholder="your@email.com"
+              name="email"
+              autoComplete="email"
+              label={`${t("email")}`}
+              error={emailError}
+              helperText={emailErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <TextField
+              required
+              fullWidth
+              id="username"
+              placeholder="yourusername"
+              name="username"
+              autoComplete="username"
+              label={`${t("username")}`}
+              error={usernameError}
+              helperText={usernameErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <TextField
+              required
+              fullWidth
+              name="password"
+              placeholder="••••••"
+              type="password"
+              id="password"
+              autoComplete="new-password"
+              label={`${t("password")}`}
+              variant="outlined"
+              error={passwordError}
+              helperText={passwordErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <FormControlLabel
+              control={<Checkbox value="allowExtraEmails" color="primary" />}
+              label="I want to receive updates via email."
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              onClick={validateInputs}
+            >
+              Sign up
+            </Button>
+          </Box>
+          <Divider>
+            <Typography sx={{ color: "text.secondary" }}>or</Typography>
+          </Divider>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {providers ? (
+              Object.values(providers)
+                .filter((p) => p.id !== "email" && p.id !== "credentials")
+                .map(({ id, name }) => {
+                  let icon;
+                  switch (id) {
+                    case "google":
+                      icon = <GoogleIcon />;
+                      break;
+                    case "github":
+                      icon = <GitHubIcon />;
+                      break;
+                    default:
+                      icon = <NetlifyIcon />;
+                  }
+                  return (
+                    <Button
+                      key={id}
+                      variant="contained"
+                      color="inherit"
+                      fullWidth
+                      onClick={() => handleOAuthSignIn(id)}
+                      startIcon={icon}
+                    >
+                      {name}
+                    </Button>
+                  );
+                })
+            ) : (
+              <>
+                <Skeleton variant="rounded" height={"34.5px"} />
+                <Skeleton variant="rounded" height={"34.5px"} />
+                <Skeleton variant="rounded" height={"34.5px"} />
+              </>
+            )}
+            <Typography sx={{ textAlign: "center" }}>
+              Already have an account?{" "}
+              <Link
+                href="/signin"
+                style={{
+                  fontSize: "12px",
+                  fontFamily: "'Roboto','Helvetica','Arial',sans-serif",
+                  textDecoration: "underline",
+                }}
+              >
+                Sign in
+              </Link>
+            </Typography>
+          </Box>
+        </Card>
+      </SignUpContainer>
+    </CustomBox>
   );
 }

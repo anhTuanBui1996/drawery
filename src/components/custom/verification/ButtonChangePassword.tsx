@@ -14,7 +14,9 @@ import {
   FormGroup,
   IconButton,
   InputAdornment,
+  SxProps,
   TextField,
+  Theme,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -27,6 +29,7 @@ export default function ButtonChangePassword({
   buttonContent,
   buttonIcon,
   buttonColor,
+  buttonSx,
   title,
   content,
 }: {
@@ -40,6 +43,7 @@ export default function ButtonChangePassword({
     | "success"
     | "info"
     | "warning";
+  buttonSx?: SxProps<Theme> | undefined;
   title: string;
   content?: string;
 }) {
@@ -135,6 +139,7 @@ export default function ButtonChangePassword({
         onClick={handleClickOpen}
         startIcon={buttonIcon}
         variant="contained"
+        sx={buttonSx}
       >
         {buttonContent}
       </Button>

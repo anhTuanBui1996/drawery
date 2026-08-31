@@ -15,7 +15,11 @@ import { countryMapping } from "@/src/lib/country";
 import Image from "next/image";
 import { useTransition } from "react";
 
-export default function LanguageSelector() {
+export default function LanguageSelector({
+  hasBackground,
+}: {
+  hasBackground?: boolean;
+}) {
   const currentLocale = useLocale();
   const pathname = usePathname();
   const locales = routing.locales;
@@ -31,11 +35,20 @@ export default function LanguageSelector() {
   return (
     <>
       <Select
-        id="custom-select"
+        id="language-selector"
         value={currentLocale}
         onChange={handleChangeLanguage}
         color="primary"
         autoWidth
+        sx={{
+          bgcolor: hasBackground ? "background.paper" : undefined,
+          borderRadius: 3,
+          transition: "all 0.3s",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: 4,
+          },
+        }}
       >
         {locales.map((l) => (
           <MenuItem value={l} key={l}>

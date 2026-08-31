@@ -7,13 +7,16 @@ import { useColorScheme } from "@mui/material/styles";
 export default function CustomBox({
   children,
   sx,
+  className,
 }: Readonly<{
   children: React.ReactNode;
   sx?: SxProps<Theme> | undefined;
+  className?: string;
 }>) {
   const s = useColorScheme();
   return (
     <Box
+      className={className}
       sx={{
         ...sx,
         background:

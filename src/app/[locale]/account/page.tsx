@@ -20,10 +20,11 @@ import {
 } from "@mui/material";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import FacebookIcon from "@mui/icons-material/Facebook";
-import GoogleIcon from "@/src/components/client/custom/icon/GoogleIcon";
+import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
 import EmailIcon from "@mui/icons-material/Email";
-import { Link } from "@/src/i18n/navigation";
+import { usePathname } from "@/src/i18n/navigation";
 import { useColorScheme } from "@mui/material/styles";
+import ButtonChangePassword from "@/src/components/custom/verification/ButtonChangePassword";
 
 interface ProviderConfig {
   id: string;
@@ -38,6 +39,7 @@ export default function LinkAccount(): React.JSX.Element {
   const t = useTranslations("LinkAccount");
   const formatter = useFormatter();
   const s = useColorScheme();
+  const pathname = usePathname();
 
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -62,64 +64,78 @@ export default function LinkAccount(): React.JSX.Element {
     }
   };
 
-  const handleLink = async (providerId: string) => {
+  const handleLink = (providerId: string, providerName: string) => {
     setActionLoading(providerId);
-    await signIn(providerId, { callbackUrl: window.location.href });
+    signIn(providerId, { callbackUrl: pathname })
+      .catch((err) => {
+        Swal.fire({
+          icon: "error",
+          title: t("alertErrorTitle"),
+          text: err,
+        });
+      })
+      .finally(() => setActionLoading(null));
   };
 
-  const handleUnlink = async (providerId: string) => {
-    const result = await Swal.fire({
+  const handleUnlink = (providerId: string, providerName: string) => {
+    Swal.fire({
       icon: "warning",
       title: t("confirmUnlinkTitle"),
-      text: t("confirmUnlinkText", {
-        provider:
-          providers.find((p) => p.id === providerId)?.name || providerId,
-      }),
+      text: t("confirmUnlinkText", { providerName }),
       showCancelButton: true,
       confirmButtonText: t("confirmUnlinkButton"),
       cancelButtonText: t("cancelButton"),
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b",
-    });
+    }).then(({ isConfirmed }) => {
+      if (!isConfirmed) return;
 
-    if (!result.isConfirmed) return;
-
-    setActionLoading(providerId);
-    try {
-      const res = await fetch("/api/account/unlinkProvider", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: providerId }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setProviders((prev) =>
-          prev.map((p) =>
-            p.id === providerId ? { ...p, isLinked: false } : p,
-          ),
-        );
-        Swal.fire({
-          icon: "success",
-          title: t("alertSuccessTitle"),
-          text: t("alertUnlinkSuccess"),
+      setActionLoading(providerId);
+      try {
+        fetch("/api/account/unlinkProvider", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: providerId }),
+        }).then((res) => {
+          if (res.ok) {
+            res.json().then(({ success }) => {
+              if (success) {
+                setProviders((prev) =>
+                  prev.map((p) =>
+                    p.id === providerId ? { ...p, isLinked: false } : p,
+                  ),
+                );
+                Swal.fire({
+                  icon: "success",
+                  title: t("alertSuccessTitle"),
+                  text: t("alertUnlinkSuccess"),
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: t("alertErrorTitle"),
+                  text: t("alertError"),
+                });
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: t("alertErrorTitle"),
+              text: t("alertError"),
+            });
+          }
         });
-      } else {
+      } catch (err) {
         Swal.fire({
           icon: "error",
           title: t("alertErrorTitle"),
-          text: data.error || t("alertError"),
+          text: t("alertError"),
         });
+      } finally {
+        setActionLoading(null);
       }
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: t("alertErrorTitle"),
-        text: t("alertError"),
-      });
-    } finally {
-      setActionLoading(null);
-    }
+    });
   };
 
   return (
@@ -289,7 +305,9 @@ export default function LinkAccount(): React.JSX.Element {
                           variant="outlined"
                           color="error"
                           disabled={isBusy}
-                          onClick={() => handleUnlink(provider.id)}
+                          onClick={() =>
+                            handleUnlink(provider.id, provider.name)
+                          }
                           startIcon={
                             isBusy ? (
                               <CircularProgress size={14} color="inherit" />
@@ -310,7 +328,7 @@ export default function LinkAccount(): React.JSX.Element {
                           size="small"
                           variant="contained"
                           disabled={isBusy}
-                          onClick={() => handleLink(provider.id)}
+                          onClick={() => handleLink(provider.id, provider.name)}
                           startIcon={
                             isBusy ? (
                               <CircularProgress size={14} color="inherit" />
@@ -356,20 +374,22 @@ export default function LinkAccount(): React.JSX.Element {
         </Paper>
 
         {/* Change password shortcut */}
-        <Button
-          component={Link}
-          href="/account/password"
-          fullWidth
-          variant="contained"
-          startIcon={<KeyRound size={16} />}
+        <Box
           sx={{
-            mt: 3,
-            textTransform: "none",
-            fontWeight: 600,
+            mt: "20px",
+            width: "100%",
           }}
         >
-          {t("changePassword")}
-        </Button>
+          <ButtonChangePassword
+            buttonColor="primary"
+            title={t("changePassword")}
+            buttonIcon={<KeyRound size={16} />}
+            buttonContent={t("changePassword")}
+            buttonSx={{
+              width: "100%",
+            }}
+          />
+        </Box>
       </Container>
 
       <Backdrop

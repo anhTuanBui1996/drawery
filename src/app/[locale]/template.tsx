@@ -12,7 +12,6 @@ export default function Template({
   return (
     <Box
       sx={{
-        minHeight: "100vh",
         bgcolor: s.mode === "light" ? "#f9fafb" : "#313131",
       }}
     >

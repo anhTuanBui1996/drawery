@@ -11,7 +11,7 @@ import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import AppLogo from "./AppLogo";
+import AppLogo from "../../layout/AppLogo";
 import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -22,14 +22,18 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import LockPersonIcon from "@mui/icons-material/LockPerson";
+import BookSharpIcon from "@mui/icons-material/BookSharp";
 import VerifiedUserSharpIcon from "@mui/icons-material/VerifiedUserSharp";
 import { Avatar, Menu, MenuItem, MenuList, Tooltip } from "@mui/material";
 import { signOut, useSession } from "next-auth/react";
 import { getPathname, usePathname } from "@/src/i18n/navigation";
 import { Link } from "@/src/i18n/navigation";
 import { useTranslations } from "next-intl";
-import SwitchTheme from "./SwitchTheme";
-import LanguageSelector from "./LanguageSelector";
+import SwitchTheme from "../../layout/SwitchTheme";
+import LanguageSelector from "../../layout/LanguageSelector";
+import Swal from "sweetalert2";
+import { useSnackbar } from "notistack";
 
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
@@ -38,6 +42,8 @@ interface AppBarProps extends MuiAppBarProps {
 
 const menuItems = [
   { name: "dashboard", icon: <DashboardIcon />, href: "/dashboard" },
+  { name: "privacy", icon: <LockPersonIcon />, href: "/privacy" },
+  { name: "eula", icon: <BookSharpIcon />, href: "/eula" },
   { name: "about", icon: <InfoIcon />, href: "/" },
 ];
 
@@ -89,6 +95,7 @@ export default function ApplicationHeaderBar({
   const colorScheme = useColorScheme();
   const { data: session } = useSession();
   const t = useTranslations("AppHeader");
+  const { enqueueSnackbar } = useSnackbar();
   const pathname = usePathname();
 
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
@@ -104,7 +111,17 @@ export default function ApplicationHeaderBar({
   };
 
   const handleSignOut = async () => {
-    signOut({ callbackUrl: getPathname({ href: "/signin", locale }) });
+    signOut({ callbackUrl: getPathname({ href: "/signin", locale }) })
+      .then(() => {
+        enqueueSnackbar({
+          variant: "success",
+          message: t("logOutSuccessfully"),
+        });
+      })
+      .catch((err) => {
+        console.error("Sign out error", err);
+        Swal.fire({ title: t("alertErrorTitle"), text: t("alertError") });
+      });
   };
 
   return (
@@ -141,9 +158,16 @@ export default function ApplicationHeaderBar({
               <AppLogo />
             </Typography>
           )}
-          <Box sx={{ flexGrow: 1, justifyContent: "right", display: "flex" }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              justifyContent: "right",
+              display: "flex",
+              gap: 2,
+            }}
+          >
             <LanguageSelector />
-            <SwitchTheme />
+            <SwitchTheme hasBackground={false} />
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 {session?.user?.image ? (

@@ -4,9 +4,10 @@ import React from "react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import { usePathname } from "@/src/i18n/navigation";
-import AppHeader from "./AppHeader";
-import DrawHeader from "./DrawHeader";
+import AppHeader from "../custom/header/AppHeader";
+import DrawHeader from "../custom/header/DrawHeader";
 import { styled } from "@mui/material/styles";
+import PublicHeader from "../custom/header/PublicHeader";
 
 const drawerWidth = 240;
 
@@ -40,14 +41,18 @@ export default function HeaderToggle({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isInSigninOrSignupPage =
+  const isInPublicPages =
     pathname === `/${locale}/signin` ||
     pathname === `/${locale}/signup` ||
+    pathname === `/${locale}/privacy` ||
+    pathname === `/${locale}/eula` ||
     pathname === `/signin` ||
-    pathname === `/signup`;
+    pathname === `/signup` ||
+    pathname === `/privacy` ||
+    pathname === `/eula`;
   const isInIndexPage = pathname === `/${locale}` || pathname === `/`;
   const isInDrawingPage = pathname.endsWith("/drawing");
-  const isShowHeader = !isInSigninOrSignupPage && !isInIndexPage;
+  const isShowPrivateHeader = !isInPublicPages && !isInIndexPage;
 
   const [open, setOpen] = React.useState(false);
 
@@ -66,8 +71,8 @@ export default function HeaderToggle({
   }, []);
   return (
     <CacheProvider value={cache}>
-      {isShowHeader &&
-        (isInDrawingPage ? (
+      {isShowPrivateHeader ? (
+        isInDrawingPage ? (
           <DrawHeader
             open={open}
             handleDrawerOpen={handleDrawerOpen}
@@ -82,8 +87,17 @@ export default function HeaderToggle({
             sideMenuWidth={drawerWidth}
             locale={locale}
           />
-        ))}
-      <Main open={open} lang={locale}>
+        )
+      ) : (
+        <PublicHeader />
+      )}
+      <Main
+        open={open}
+        lang={locale}
+        style={{
+          paddingTop: isInPublicPages ? "0" : "64px",
+        }}
+      >
         {children}
       </Main>
     </CacheProvider>
