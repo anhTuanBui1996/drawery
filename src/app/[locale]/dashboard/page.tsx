@@ -1,6 +1,6 @@
 "use client";
 
-import DashboardDiagramCard from "@/src/components/custom/content/DashboardCard";
+import DashboardCard from "@/src/components/custom/content/DashboardCard";
 import {
   Box,
   Button,
@@ -191,7 +191,7 @@ export default function Dashboard() {
             myDiagrams.length ? (
               myDiagrams.map((d) => (
                 <Grid size={{ xl: 3, lg: 4, md: 6, sm: 12 }} key={d.diagramId}>
-                  <DashboardDiagramCard
+                  <DashboardCard
                     isOwned
                     type="erd"
                     diagramId={d.diagramId}
