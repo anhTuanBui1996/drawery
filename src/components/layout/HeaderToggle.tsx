@@ -9,8 +9,6 @@ import DrawHeader from "../custom/header/DrawHeader";
 import { styled } from "@mui/material/styles";
 import PublicHeader from "../custom/header/PublicHeader";
 
-const drawerWidth = 240;
-
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
   open?: boolean;
 }>(({ theme }) => ({
@@ -51,7 +49,7 @@ export default function HeaderToggle({
     pathname === `/privacy` ||
     pathname === `/eula`;
   const isInIndexPage = pathname === `/${locale}` || pathname === `/`;
-  const isInDrawingPage = pathname.endsWith("/drawing");
+  const isInDrawingPage = pathname.includes("/drawing");
   const isShowPrivateHeader = !isInPublicPages && !isInIndexPage;
 
   const [open, setOpen] = React.useState(false);
@@ -73,18 +71,12 @@ export default function HeaderToggle({
     <CacheProvider value={cache}>
       {isShowPrivateHeader ? (
         isInDrawingPage ? (
-          <DrawHeader
-            open={open}
-            handleDrawerOpen={handleDrawerOpen}
-            handleDrawerClose={handleDrawerClose}
-            sideMenuWidth={drawerWidth}
-          />
+          <DrawHeader />
         ) : (
           <AppHeader
             open={open}
             handleDrawerOpen={handleDrawerOpen}
             handleDrawerClose={handleDrawerClose}
-            sideMenuWidth={drawerWidth}
             locale={locale}
           />
         )
@@ -95,7 +87,8 @@ export default function HeaderToggle({
         open={open}
         lang={locale}
         style={{
-          paddingTop: isInPublicPages ? "0" : "64px",
+          paddingTop: isInPublicPages || isInIndexPage ? undefined : "64px",
+          paddingLeft: isInDrawingPage ? "400px" : undefined,
         }}
       >
         {children}

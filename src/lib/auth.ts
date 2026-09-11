@@ -6,7 +6,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import client from "@/src/lib/db";
 import { NextAuthOptions } from "next-auth";
-import { ExtendedAdapterUser } from "../types/auth/ExtendedAdapterUser";
+import { ExtendedAdapterUser } from "../types/model/ExtendedAdapterUser";
 import { EmailConfig } from "next-auth/providers/index";
 import nodemailer from "nodemailer";
 

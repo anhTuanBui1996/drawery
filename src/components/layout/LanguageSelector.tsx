@@ -60,6 +60,8 @@ export default function LanguageSelector({
               style={{
                 marginRight: "10px",
                 display: "inline",
+                width: "20px",
+                height: "25px",
               }}
             />
             <Typography color="textPrimary" sx={{ display: "inline" }}>

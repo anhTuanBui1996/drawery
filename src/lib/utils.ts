@@ -1,4 +1,8 @@
 import { routing } from "@/src/i18n/routing";
+import { EdgeDocument, NodeDocument } from "../types/data/DiagramTransfer";
+import { NodeRelationEdge, TableNodeData } from "../types/model/TableNode";
+import * as muiColors from "@mui/material/colors";
+import { keyframes } from "@emotion/react";
 
 /**
  * Extracts the locale segment from a URL pathname, falling back to the default locale.
@@ -48,3 +52,79 @@ export function randomInt(max: number): number {
 
   return value % max;
 }
+
+export function toTableNodeData(node: NodeDocument): TableNodeData {
+  return {
+    id: node.id,
+    position: node.position,
+    type: "tableNode",
+    data: {
+      ...node.data,
+      _id: node._id,
+      index: node.index,
+      diagramId: node.diagramId.toString(),
+    },
+  };
+}
+
+export function toNodeDocument(
+  sourceDocument: NodeDocument,
+  newNode: TableNodeData,
+): NodeDocument {
+  return {
+    ...sourceDocument,
+    data: {
+      ...newNode.data,
+    },
+    position: newNode.position,
+  };
+}
+
+export function toNodeRelationEdge(edge: EdgeDocument): NodeRelationEdge {
+  return {
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+  };
+}
+
+export function toEdgeDocument(
+  sourceDocument: EdgeDocument,
+  newEdge: NodeRelationEdge,
+): EdgeDocument {
+  return {
+    ...sourceDocument,
+    id: newEdge.id,
+    source: newEdge.source,
+    target: newEdge.target,
+  };
+}
+
+const HUES = [
+  "red",
+  "pink",
+  "purple",
+  "deepPurple",
+  "indigo",
+  "blue",
+  "lightBlue",
+  "cyan",
+  "teal",
+  "green",
+  "lightGreen",
+  "lime",
+  "yellow",
+  "amber",
+  "orange",
+  "deepOrange",
+  "brown",
+  "grey",
+  "blueGrey",
+] as const;
+
+export function getRandomMuiColor(shade: keyof typeof muiColors.red = 500) {
+  const hue = HUES[Math.floor(Math.random() * HUES.length)];
+  return (muiColors as any)[hue][shade] as string;
+}
+
+export const invalidCharRegexInName = new RegExp(/^[a-zA-Z_][a-zA-Z0-9_]*$/);

@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { styled, useTheme } from "@mui/material/styles";
+import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { styled, useColorScheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -11,14 +11,7 @@ import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
 import VerifiedUserSharpIcon from "@mui/icons-material/VerifiedUserSharp";
 import DashboardSharpIcon from "@mui/icons-material/DashboardSharp";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -28,20 +21,34 @@ import {
   Menu,
   MenuItem,
   MenuList,
+  TextField,
   Tooltip,
 } from "@mui/material";
+import AppLogo from "../../layout/AppLogo";
+import { getPathname, Link } from "@/src/i18n/navigation";
+import { InfoIcon } from "lucide-react";
+import LanguageSelector from "../../layout/LanguageSelector";
+import SwitchTheme from "../../layout/SwitchTheme";
+import Swal from "sweetalert2";
+import { enqueueSnackbar } from "notistack";
+import { useLocale, useTranslations } from "next-intl";
+import { signOut, useSession } from "next-auth/react";
+import {
+  useDrawingDiagramInfo,
+  useDrawingLoadingStatus,
+  useDrawingUpdateTitle,
+} from "../../provider/DrawingProvider";
+import { FaEdit, FaPlus } from "react-icons/fa";
+import { useNodes, useReactFlow } from "@xyflow/react";
+import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
+import { nanoid } from "nanoid";
+import TableListItem from "../drawing/TableListItem";
+import { getRandomMuiColor } from "@/src/lib/utils";
 
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
   drawerwidth?: number;
 }
-
-const settings = [
-  { title: "Profile", icon: <InboxIcon /> },
-  { title: "Account", icon: <VerifiedUserSharpIcon /> },
-  { title: "Dashboard", icon: <DashboardSharpIcon /> },
-  { title: "Logout", icon: <LogoutIcon /> },
-];
 
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== "open",
@@ -75,61 +82,201 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 export default function DrawingHeaderBar({
-  open,
-  handleDrawerOpen,
-  handleDrawerClose,
-  sideMenuWidth = 240,
+  sideMenuWidth = 400,
 }: {
-  open: boolean;
-  handleDrawerOpen: () => void;
-  handleDrawerClose: () => void;
   sideMenuWidth?: number;
 }) {
-  const theme = useTheme();
+  const locale = useLocale();
+  const colorScheme = useColorScheme();
+  const { data: session } = useSession();
+  const t = useTranslations("DrawingHeader");
 
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null,
-  );
+  const isDiagramLoading = useDrawingLoadingStatus();
+  const diagramInfo = useDrawingDiagramInfo();
+  const updateDiagramTitle = useDrawingUpdateTitle();
+
+  const { addNodes, screenToFlowPosition } = useReactFlow<
+    TableNodeData,
+    NodeRelationEdge
+  >();
+  const currentNodes = useNodes<TableNodeData>();
+
+  const [isEditTitle, setIsEditTitle] = useState<Boolean>(false);
+  const [currenTitle, setCurrentTitle] = useState<string>("");
+  const titleRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    setCurrentTitle(diagramInfo?.title || "");
+  }, [diagramInfo?.title]);
+
+  useEffect(() => {
+    if (isEditTitle) {
+      titleRef.current?.focus();
+    }
+  }, [isEditTitle]);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
-
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
+  };
+  const handleSignOut = async () => {
+    signOut({ callbackUrl: getPathname({ href: "/signin", locale }) })
+      .then(() => {
+        enqueueSnackbar({
+          variant: "success",
+          message: t("logOutSuccessfully"),
+        });
+      })
+      .catch((err) => {
+        console.error("Sign out error", err);
+        Swal.fire({ title: t("alertErrorTitle"), text: t("alertError") });
+      });
+  };
+
+  const handleOpenEditTitle = () => {
+    setIsEditTitle(true);
+  };
+  const handleChangeTitle = (
+    e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+  ) => {
+    setCurrentTitle(e.target.value);
+  };
+  const handleCancelEditTitle = () => {
+    setCurrentTitle(diagramInfo?.title || "");
+    setIsEditTitle(false);
+  };
+  const handleSubmitEditTitleByEnter = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      setIsEditTitle(false);
+      submitEditTitle();
+    } else if (e.key === "Escape") {
+      handleCancelEditTitle();
+    }
+  };
+  const submitEditTitle = () => {
+    if (
+      currenTitle &&
+      currenTitle !== diagramInfo?.title &&
+      diagramInfo?.diagramId &&
+      updateDiagramTitle
+    ) {
+      updateDiagramTitle(diagramInfo?.diagramId, currenTitle)
+        .then(() => {
+          enqueueSnackbar({
+            variant: "success",
+            message: t("updateTitleSuccessfully"),
+          });
+        })
+        .catch((err) => {
+          console.error("Update diagram title error", err);
+          Swal.fire({ title: t("alertErrorTitle"), text: t("alertError") });
+        });
+    }
+  };
+
+  const handleAddNewTable = () => {
+    if (diagramInfo) {
+      const randomOffsetX = (Math.random() - 0.5) * 200; // lệch ngẫu nhiên trong khoảng ±100px
+      const randomOffsetY = (Math.random() - 0.5) * 200;
+
+      const position = screenToFlowPosition({
+        x: window.innerWidth / 2 + randomOffsetX,
+        y: window.innerHeight / 2 + randomOffsetY,
+      });
+
+      const newTableId = nanoid();
+      const firstColumnName = `${t("columnInColumnName")}_0`;
+      const firstColumnId = nanoid();
+      const newNode: TableNodeData = {
+        id: newTableId,
+        position,
+        type: "tableNode",
+        dragHandle: ".drag-header-handle",
+        data: {
+          diagramId: diagramInfo.diagramId,
+          index: currentNodes.length,
+          color: getRandomMuiColor(),
+          tableName: `${t("tableInTableName")}_${currentNodes.length}`,
+          columns: {
+            [firstColumnId]: {
+              columnName: firstColumnName,
+              dataType: {
+                type: "varchar",
+                params: [100],
+              },
+              isNullable: true,
+            },
+          },
+        },
+      };
+      addNodes(newNode);
+    }
   };
 
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar position="fixed" open={open} drawerwidth={sideMenuWidth}>
+      <AppBar
+        position="fixed"
+        open
+        drawerwidth={sideMenuWidth}
+        sx={{
+          backgroundImage:
+            colorScheme.mode === "light"
+              ? "linear-gradient(135deg, #a8e3ff 0%, #c1c6cd 50%, #77bff1 100%)"
+              : "linear-gradient(135deg, #2d4ca2 0%, #2f4975 50%, #06b6d4 100%)",
+        }}
+      >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={[
-              {
-                mr: 2,
-              },
-              open && { display: "none" },
-            ]}
+          <Box
+            sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 2 }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" mr={2}>
-            DraWery
-          </Typography>
-          <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            <Button color="inherit">File</Button>
-            <Button color="inherit">Projects</Button>
-            <Button color="inherit">Team</Button>
+            <TextField
+              value={currenTitle}
+              placeholder={t("noTitle")}
+              onChange={handleChangeTitle}
+              onBlur={handleCancelEditTitle}
+              onKeyDown={handleSubmitEditTitleByEnter}
+              inputRef={titleRef}
+              variant="standard"
+              disabled={!isEditTitle}
+            />
+            {!isEditTitle && (
+              <IconButton
+                disabled={!diagramInfo || isDiagramLoading}
+                onClick={handleOpenEditTitle}
+                sx={{ paddingTop: "4px" }}
+              >
+                <FaEdit size="20px" />
+              </IconButton>
+            )}
           </Box>
-          <Box sx={{ flexGrow: 0 }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              justifyContent: "right",
+              display: "flex",
+              gap: 2,
+            }}
+          >
+            <LanguageSelector />
+            <SwitchTheme hasBackground={false} />
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                {session?.user?.image ? (
+                  <Avatar
+                    alt={session.user.name || undefined}
+                    src={session.user.image}
+                  />
+                ) : (
+                  <Avatar alt={"Avatar"}>
+                    {session?.user?.name?.[0] || session?.user?.email?.[0]}
+                  </Avatar>
+                )}
               </IconButton>
             </Tooltip>
             <Menu
@@ -149,14 +296,71 @@ export default function DrawingHeaderBar({
               onClose={handleCloseUserMenu}
             >
               <MenuList>
-                {settings.map((setting) => (
-                  <MenuItem key={setting.title} onClick={handleCloseUserMenu}>
-                    <ListItemIcon>{setting.icon}</ListItemIcon>
+                <MenuItem onClick={handleCloseUserMenu}>
+                  <Link
+                    href={`/profile`}
+                    style={{
+                      display: "flex",
+                      textDecoration: "none",
+                      color: "inherit",
+                      flexWrap: "nowrap",
+                      flexDirection: "row",
+                    }}
+                  >
+                    <ListItemIcon>
+                      <InfoIcon />
+                    </ListItemIcon>
                     <Typography sx={{ textAlign: "center" }}>
-                      {setting.title}
+                      {t("profile")}
                     </Typography>
-                  </MenuItem>
-                ))}
+                  </Link>
+                </MenuItem>
+                <MenuItem onClick={handleCloseUserMenu}>
+                  <Link
+                    href={`/account`}
+                    style={{
+                      display: "flex",
+                      textDecoration: "none",
+                      color: "inherit",
+                      flexWrap: "nowrap",
+                      flexDirection: "row",
+                    }}
+                  >
+                    <ListItemIcon>
+                      <VerifiedUserSharpIcon />
+                    </ListItemIcon>
+                    <Typography sx={{ textAlign: "center" }}>
+                      {t("account")}
+                    </Typography>
+                  </Link>
+                </MenuItem>
+                <MenuItem onClick={handleCloseUserMenu}>
+                  <Link
+                    href={`/dashboard`}
+                    style={{
+                      display: "flex",
+                      textDecoration: "none",
+                      color: "inherit",
+                      flexWrap: "nowrap",
+                      flexDirection: "row",
+                    }}
+                  >
+                    <ListItemIcon>
+                      <DashboardSharpIcon />
+                    </ListItemIcon>
+                    <Typography sx={{ textAlign: "center" }}>
+                      {t("dashboard")}
+                    </Typography>
+                  </Link>
+                </MenuItem>
+                <MenuItem onClick={handleSignOut}>
+                  <ListItemIcon>
+                    <LogoutIcon />
+                  </ListItemIcon>
+                  <Typography sx={{ textAlign: "center" }}>
+                    {t("logout")}
+                  </Typography>
+                </MenuItem>
               </MenuList>
             </Menu>
           </Box>
@@ -171,44 +375,69 @@ export default function DrawingHeaderBar({
             boxSizing: "border-box",
           },
         }}
-        variant="persistent"
+        hideBackdrop
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundImage:
+                colorScheme.mode === "light"
+                  ? "linear-gradient(135deg, #a8e3ff 0%, #c1c6cd 50%, #77bff1 100%)"
+                  : "linear-gradient(135deg, #2f4975 5%, #2d4ca2 30%, #12899d 100%)",
+            },
+          },
+        }}
+        variant="permanent"
         anchor="left"
-        open={open}
+        open={true}
       >
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === "ltr" ? (
-              <ChevronLeftIcon />
-            ) : (
-              <ChevronRightIcon />
-            )}
-          </IconButton>
+        <DrawerHeader
+          sx={{
+            justifyContent: "left",
+            backgroundImage:
+              colorScheme.mode === "light"
+                ? "linear-gradient(135deg, #77bff1 0%, #c1c6cd 20%, #a8e3ff 100%)"
+                : "linear-gradient(135deg, #12899d 0%, #2f4975 20%, #2d4ca2 100%)",
+          }}
+        >
+          <Typography variant="h6" noWrap component="div" mr={2}>
+            <AppLogo />
+          </Typography>
         </DrawerHeader>
+        <Button
+          startIcon={<FaPlus size={12} />}
+          variant="contained"
+          sx={{ m: 2 }}
+          onClick={handleAddNewTable}
+        >
+          <Typography fontSize={12} fontWeight={600} component={"strong"}>
+            {t("addNewTable")}
+          </Typography>
+        </Button>
         <Divider />
-        <List>
-          {["Inbox", "Starred", "Send email", "Drafts"].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  <InboxIcon />
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List>
-          {["All mail", "Trash", "Spam"].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  <InboxIcon />
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
+        <List
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "calc(100vh - 64px + 30px + 1px)",
+            overflowY: "auto",
+            scrollbarWidth: "thin",
+            px: "5px",
+            gap: "10px",
+          }}
+        >
+          {currentNodes
+            .sort((a, b) => a.data.index - b.data.index)
+            .map(({ selected, data, id }, index) => (
+              <TableListItem
+                key={id}
+                id={id}
+                index={index}
+                color={data.color}
+                tableName={data.tableName}
+                columns={data.columns}
+                selected={selected}
+              />
+            ))}
         </List>
       </Drawer>
     </Box>

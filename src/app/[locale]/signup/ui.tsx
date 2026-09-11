@@ -1,0 +1,352 @@
+"use client";
+
+import { useState, JSX, FormEvent } from "react";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Divider,
+  FormControlLabel,
+  TextField,
+  Typography,
+  Stack,
+  Card as MuiCard,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
+import { SiNetlify as NetlifyIcon } from "react-icons/si";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/src/i18n/navigation";
+import Swal from "sweetalert2";
+import {
+  ClientSafeProvider,
+  getProviders,
+  LiteralUnion,
+  signIn,
+} from "next-auth/react";
+import AppLogo from "@/src/components/layout/AppLogo";
+import CustomBox from "@/src/components/custom/background/CustomBox";
+import { BuiltInProviderType } from "next-auth/providers/index";
+
+const Card = styled(MuiCard)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignSelf: "center",
+  width: "100%",
+  padding: theme.spacing(4),
+  gap: theme.spacing(2),
+  margin: "auto",
+  boxShadow:
+    "hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px",
+  [theme.breakpoints.up("sm")]: {
+    width: "450px",
+  },
+  ...theme.applyStyles("dark", {
+    boxShadow:
+      "hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px",
+  }),
+}));
+
+const defaultCallBack = "/dashboard";
+
+const SignUpContainer = styled(Stack)(({ theme }) => ({
+  height: "calc((1 - var(--template-frame-height, 0)) * 100dvh)",
+  minHeight: "100%",
+  padding: theme.spacing(2),
+  [theme.breakpoints.up("sm")]: {
+    padding: theme.spacing(4),
+  },
+  "&::before": {
+    content: '""',
+    display: "block",
+    position: "absolute",
+    zIndex: -1,
+    inset: 0,
+    backgroundImage:
+      "radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))",
+    backgroundRepeat: "no-repeat",
+    ...theme.applyStyles("dark", {
+      backgroundImage:
+        "radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))",
+    }),
+  },
+}));
+
+export default function SignUp({
+  providers,
+}: {
+  providers: Record<
+    LiteralUnion<BuiltInProviderType, string>,
+    ClientSafeProvider
+  > | null;
+}): JSX.Element {
+  const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations("SignUp");
+
+  const [emailError, setEmailError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState("");
+  const [usernameError, setUsernameError] = useState(false);
+  const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const [nameError, setNameError] = useState(false);
+  const [nameErrorMessage, setNameErrorMessage] = useState("");
+
+  const validateInputs = () => {
+    const email = document.getElementById("email") as HTMLInputElement;
+    const username = document.getElementById("username") as HTMLInputElement;
+    const password = document.getElementById("password") as HTMLInputElement;
+    const firstname = document.getElementById("firstname") as HTMLInputElement;
+
+    let isValid = true;
+
+    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+      setEmailError(true);
+      setEmailErrorMessage("Please enter a valid email address.");
+      isValid = false;
+    } else {
+      setEmailError(false);
+      setEmailErrorMessage("");
+    }
+
+    if (!username.value || username.value.length < 3) {
+      setUsernameError(true);
+      setUsernameErrorMessage("Username must be at least 3 characters long.");
+      isValid = false;
+    } else {
+      setUsernameError(false);
+      setUsernameErrorMessage("");
+    }
+
+    if (!password.value || password.value.length < 6) {
+      setPasswordError(true);
+      setPasswordErrorMessage("Password must be at least 6 characters long.");
+      isValid = false;
+    } else {
+      setPasswordError(false);
+      setPasswordErrorMessage("");
+    }
+
+    if (!firstname.value || firstname.value.length < 1) {
+      setNameError(true);
+      setNameErrorMessage("First name is required.");
+      isValid = false;
+    } else {
+      setNameError(false);
+      setNameErrorMessage("");
+    }
+
+    return isValid;
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (nameError || emailError || passwordError) {
+      return;
+    }
+    const data = new FormData(event.currentTarget);
+    fetch("/api/auth/registerUserWithCredentials", {
+      method: "POST",
+      headers: { "accept-language": locale },
+      body: JSON.stringify({
+        firstName: data.get("firstname"),
+        lastName: data.get("lastname"),
+        username: data.get("username"),
+        email: data.get("email"),
+        password: data.get("password"),
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          Swal.fire({
+            icon: "error",
+            title: t("alertErrorTitle"),
+            text: data.error,
+          });
+        } else {
+          signIn("email", { email: data.user.email, redirect: false }).then(
+            (result) => {
+              if (result?.ok) {
+                Swal.fire({
+                  icon: "success",
+                  title: t("alertSuccessTitle"),
+                  text: t("alertCheckEmail"),
+                }).then(() => {
+                  router.push(`/${data.user.username}/dashboard`);
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: t("alertErrorTitle"),
+                  text: result?.error || t("alertError"),
+                });
+              }
+            },
+          );
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        Swal.fire({
+          icon: "error",
+          title: t("alertErrorTitle"),
+          text: err.message || t("alertError"),
+        });
+      });
+  };
+
+  const handleOAuthSignIn = (provider: string) => {
+    signIn(provider, { defaultCallBack }).then((result) => {
+      if (!result?.ok && result?.error) {
+        Swal.fire({
+          icon: "error",
+          title: t("alertErrorTitle"),
+          text: result?.error || t("alertError"),
+        });
+      }
+    });
+  };
+
+  return (
+    <CustomBox>
+      <SignUpContainer direction="column" justifyContent="space-between">
+        <Card variant="outlined">
+          <AppLogo />
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
+          >
+            Sign up
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+          >
+            <TextField
+              autoComplete="name"
+              name="firstname"
+              required
+              fullWidth
+              label={`${t("firstName")}`}
+              id="firstname"
+              placeholder="An"
+              error={nameError}
+              helperText={nameErrorMessage}
+              color={nameError ? "error" : "primary"}
+            />
+            <TextField
+              autoComplete="name"
+              name="lastname"
+              required
+              fullWidth
+              label={`${t("lastName")}`}
+              id="lastname"
+              placeholder="Tun (optional)"
+            />
+            <TextField
+              required
+              fullWidth
+              id="email"
+              placeholder="your@email.com"
+              name="email"
+              autoComplete="email"
+              label={`${t("email")}`}
+              error={emailError}
+              helperText={emailErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <TextField
+              required
+              fullWidth
+              id="username"
+              placeholder="yourusername"
+              name="username"
+              autoComplete="username"
+              label={`${t("username")}`}
+              error={usernameError}
+              helperText={usernameErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <TextField
+              required
+              fullWidth
+              name="password"
+              placeholder="••••••"
+              type="password"
+              id="password"
+              autoComplete="new-password"
+              label={`${t("password")}`}
+              variant="outlined"
+              error={passwordError}
+              helperText={passwordErrorMessage}
+              color={passwordError ? "error" : "primary"}
+            />
+            <FormControlLabel
+              control={<Checkbox value="allowExtraEmails" color="primary" />}
+              label="I want to receive updates via email."
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              onClick={validateInputs}
+            >
+              Sign up
+            </Button>
+          </Box>
+          <Divider>
+            <Typography sx={{ color: "text.secondary" }}>or</Typography>
+          </Divider>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {providers &&
+              Object.values(providers)
+                .filter((p) => p.id !== "email" && p.id !== "credentials")
+                .map(({ id, name }) => {
+                  let icon;
+                  switch (id) {
+                    case "google":
+                      icon = <GoogleIcon />;
+                      break;
+                    case "github":
+                      icon = <GitHubIcon />;
+                      break;
+                    default:
+                      icon = <NetlifyIcon />;
+                  }
+                  return (
+                    <Button
+                      key={id}
+                      variant="contained"
+                      color="inherit"
+                      fullWidth
+                      onClick={() => handleOAuthSignIn(id)}
+                      startIcon={icon}
+                    >
+                      {name}
+                    </Button>
+                  );
+                })}
+            <Typography sx={{ textAlign: "center" }}>
+              Already have an account?{" "}
+              <Link
+                href="/signin"
+                style={{
+                  fontSize: "12px",
+                  fontFamily: "'Roboto','Helvetica','Arial',sans-serif",
+                  textDecoration: "underline",
+                }}
+              >
+                Sign in
+              </Link>
+            </Typography>
+          </Box>
+        </Card>
+      </SignUpContainer>
+    </CustomBox>
+  );
+}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import Swal from "sweetalert2";
 import { Link2, Unlink, ShieldCheck, KeyRound } from "lucide-react";
 import {
@@ -19,7 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import FacebookIcon from "@mui/icons-material/Facebook";
+import { SiNetlify as NetlifyIcon } from "react-icons/si";
 import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
 import EmailIcon from "@mui/icons-material/Email";
 import { usePathname } from "@/src/i18n/navigation";
@@ -35,6 +35,7 @@ interface ProviderConfig {
 }
 
 export default function LinkAccount(): React.JSX.Element {
+  const locale = useLocale();
   const { data: session, status } = useSession();
   const t = useTranslations("LinkAccount");
   const formatter = useFormatter();
@@ -54,7 +55,9 @@ export default function LinkAccount(): React.JSX.Element {
   const fetchLinkedAccounts = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/account/getProvidersWithStatus");
+      const res = await fetch("/api/auth/getProvidersWithStatus", {
+        headers: { "accept-language": locale },
+      });
       const data = await res.json();
       setProviders(data.providers || []);
     } catch (err) {
@@ -92,9 +95,9 @@ export default function LinkAccount(): React.JSX.Element {
 
       setActionLoading(providerId);
       try {
-        fetch("/api/account/unlinkProvider", {
+        fetch("/api/auth/unlinkProvider", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "accept-language": locale },
           body: JSON.stringify({ provider: providerId }),
         }).then((res) => {
           if (res.ok) {
@@ -147,7 +150,6 @@ export default function LinkAccount(): React.JSX.Element {
           position: "relative",
           color: "white",
           py: { xs: 3, sm: 4 },
-          pt: { xs: 10, sm: 12 },
         }}
       >
         <Container maxWidth="sm">
@@ -240,8 +242,8 @@ export default function LinkAccount(): React.JSX.Element {
                 case "github":
                   provider.icon = <GitHubIcon color="action" />;
                   break;
-                case "facebook":
-                  provider.icon = <FacebookIcon color="action" />;
+                case "netlify":
+                  provider.icon = <NetlifyIcon />;
                   break;
                 default:
                   provider.icon = <EmailIcon color="action" />;

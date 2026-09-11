@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { ActionDispatch, createContext, useContext, useReducer } from "react";
+import GlobalLoading from "../custom/loader/GlobalLoading";
 
 interface ContextData {
   isLoading: boolean;
@@ -54,6 +55,7 @@ export default function GlobalLoadingProvider({
     <GlobalLoadingContext value={ctx}>
       <GlobalLoadingDispatchContext value={dispatch}>
         {children}
+        <GlobalLoading open={ctx.isLoading} />
       </GlobalLoadingDispatchContext>
     </GlobalLoadingContext>
   );

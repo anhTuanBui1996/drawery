@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Swal from "sweetalert2";
-import { Camera, KeyRound, Link2, Save, Trash2 } from "lucide-react";
+import { Camera, InfoIcon, KeyRound, Link2, Save, Trash2 } from "lucide-react";
 import {
   Box,
   Container,
@@ -34,6 +34,7 @@ interface ProfileForm {
 }
 
 export default function Profile(): React.JSX.Element {
+  const locale = useLocale();
   const { data: session, status, update } = useSession();
   const t = useTranslations("Profile");
   const { enqueueSnackbar } = useSnackbar();
@@ -60,7 +61,9 @@ export default function Profile(): React.JSX.Element {
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/account/profileOfUser");
+      const res = await fetch("/api/auth/profileOfUser", {
+        headers: { "accept-language": locale },
+      });
       const data = await res.json();
       setForm({
         firstName: data.firstName || "",
@@ -97,8 +100,9 @@ export default function Profile(): React.JSX.Element {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch("/api/account/setAvatarOfUser", {
+      const res = await fetch("/api/auth/setAvatarOfUser", {
         method: "POST",
+        headers: { "accept-language": locale },
         body: formData,
       });
       const data = await res.json();
@@ -111,7 +115,7 @@ export default function Profile(): React.JSX.Element {
             message: t("alertAvatarSuccess"),
           });
         } else {
-          console.error("Can't update session!")
+          console.error("Can't update session!");
           enqueueSnackbar({
             variant: "error",
             message: t("alertError"),
@@ -147,9 +151,9 @@ export default function Profile(): React.JSX.Element {
 
     setIsSaving(true);
     try {
-      const res = await fetch("/api/account/profileOfUser", {
+      const res = await fetch("/api/auth/profileOfUser", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "accept-language": locale },
         body: JSON.stringify(form),
       });
       const data = await res.json();
@@ -189,11 +193,21 @@ export default function Profile(): React.JSX.Element {
           position: "relative",
           color: "white",
           py: { xs: 3, sm: 4 },
-          pt: { xs: 10, sm: 12 },
         }}
       >
         <Container maxWidth="sm">
           <Box textAlign="center">
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
+                mx: "auto",
+                mb: 2,
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              <InfoIcon size={30} />
+            </Avatar>
             <Typography
               variant="h5"
               fontWeight={700}

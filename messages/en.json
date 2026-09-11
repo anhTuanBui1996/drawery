@@ -11,6 +11,20 @@
     "eula": "End-User License Agreement",
     "privacy": "Privacy Policy"
   },
+  "DrawingHeader": {
+    "profile": "Profile",
+    "account": "Account",
+    "logout": "Logout",
+    "darkMode": "Dark",
+    "lightMode": "Light",
+    "dashboard": "Dashboard",
+    "logOutSuccessfully": "Sign out successfully!",
+    "noTitle": "No title",
+    "updateTitleSuccessfully": "Update title successfully!",
+    "addNewTable": "Add new table",
+    "tableInTableName": "Table",
+    "columnInColumnName": "Column"
+  },
   "LanguageSelector": {
     "title": "Select language"
   },
@@ -70,7 +84,6 @@
     "ctaTitle": "Ready to Transform Your Database Design Process?",
     "ctaSubtitle": "Join thousands of professionals who have streamlined their database design workflow with our tool.",
     "ctaButton": "Get Started Free",
-    "ctaButtonDemo": "Schedule Demo",
     "ctaCredit": "No credit card required • 14-day free trial • Cancel anytime",
     "linkEula": "End-User License Agreement",
     "linkPrivacy": "Privacy Policy"
@@ -173,7 +186,28 @@
     "send": "Send",
     "submit": "Submit",
     "cancel": "Cancel",
-    "signOutAllDevices": "Sign out all of devices after change password"
+    "signOutAllDevices": "Sign out all of devices after change password",
+    "invalidEmail": "Email is invalid!",
+    "invalidAppUrl": "App url is invalid!",
+    "userNotFound": "User's not found!",
+    "cantChangePassword": "Can't update password!",
+    "cantDeleteUser": "Can't delete this user!",
+    "cantDeleteAccountOfThisUser": "Can't delete accounts for this user!",
+    "internalServerError": "Internal server error. Please try again later.",
+    "nameRequired": "Display name can't be empty",
+    "displayNameTooLong": "Display name is too long",
+    "invalidPhone": "Phone number is invalid",
+    "bioTooLong": "Bio description is too long",
+    "fileNotFound": "File's not found",
+    "invalidFileType": "Only accept JPEG, PNG or WEBP",
+    "cantDeleteOldAvatar": "Can't delete old avatar",
+    "fileExceed50BM": "File exceed 50MB",
+    "noLinkAccount": "No linked account found to unlink",
+    "noProviderInfo": "Missing provider info",
+    "invalidProvider": "Invalid provider",
+    "unauthorized": "Unauthorized",
+    "cantUpdateVerifyCode": "Can't update verify code for user!",
+    "deleteDiagramFail": "Delete diagrams of user failed!"
   },
   "Privacy": {
     "title": "Privacy Policy",
@@ -318,6 +352,41 @@
     "contactEmail": "anbuta.it@gmail.com"
   },
   "Dashboard": {
-    "myDiagrams": "My Diagrams"
+    "alertError": "An error occurred! Please try again...",
+    "alertErrorTitle": "Error",
+    "myERD": "My Entity-Relationship Diagrams",
+    "addNewERD": "Add new ERD",
+    "selectMany": "Select many",
+    "noSessionFound": "No session found",
+    "unauthorized": "Unauthorized",
+    "noDiagramsAddNew": "There is no diagrams, add new one"
+  },
+  "DashboardCard": {
+    "shareDiagram": "Share diagram",
+    "removeDiagram": "Remove diagram",
+    "noTitle": "No title",
+    "createdAt": "Created at",
+    "lastUpdatedAt": "Last updated at"
+  },
+  "Drawing": {
+    "invalidId": "Invalid Id",
+    "notFound": "Diagram's not found",
+    "forbidden": "Forbidden",
+    "alertError": "An error occurred! Please try again...",
+    "noTitle": "No title",
+    "unauthorized": "Unauthorized",
+    "sendUpdateTitleFail": "Failed to send request update diagram title",
+    "sendUpdateFlowDataFail": "Failed to send request update diagram flow data",
+    "updateFail": "Errors occur during update diagram",
+    "tableName": "Table name",
+    "columnInColumnName": "Column",
+    "columnName": "Column name",
+    "addNewColumn": "Add new column",
+    "dataType": "Data type",
+    "allowNull": "Allow null",
+    "notAllowSpace": "Space character is not allowed",
+    "notAllowEmpty": "Not allow empty",
+    "notAllowSpecialCharacterOrBeginWithNumber": "Not allow special character (except _) or begin with number",
+    "tableNameExist": "The table name already exists"
   }
 }

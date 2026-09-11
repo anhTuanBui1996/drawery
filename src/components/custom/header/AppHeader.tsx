@@ -263,6 +263,7 @@ export default function ApplicationHeaderBar({
         variant="persistent"
         anchor="left"
         open={open}
+        onClose={handleDrawerClose}
       >
         <AppHeader sx={{ justifyContent: "space-between" }}>
           {open && (

@@ -7,6 +7,9 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import LoaderProvider from "./LoaderProvider";
 import { SnackbarProvider } from "notistack";
 import { grey } from "@mui/material/colors";
+import DrawingProvider from "./DrawingProvider";
+import { ReactFlowProvider } from "@xyflow/react";
+import { ScrollTargetsProvider } from "./ScrollTargetProvider";
 
 const theme = createTheme({
   colorSchemes: {
@@ -32,11 +35,17 @@ export function Providers({
     <SessionProvider>
       <EmotionProvider>
         <ThemeProvider theme={theme} defaultMode="light">
-          <SnackbarProvider maxSnack={3}>
-            <HeaderToggle locale={locale}>
-              <LoaderProvider>{children}</LoaderProvider>
-            </HeaderToggle>
-          </SnackbarProvider>
+          <LoaderProvider>
+            <SnackbarProvider maxSnack={3}>
+              <ReactFlowProvider>
+                <ScrollTargetsProvider>
+                  <DrawingProvider>
+                    <HeaderToggle locale={locale}>{children}</HeaderToggle>
+                  </DrawingProvider>
+                </ScrollTargetsProvider>
+              </ReactFlowProvider>
+            </SnackbarProvider>
+          </LoaderProvider>
         </ThemeProvider>
       </EmotionProvider>
     </SessionProvider>

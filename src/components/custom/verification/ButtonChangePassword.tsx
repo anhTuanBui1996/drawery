@@ -19,11 +19,11 @@ import {
   Theme,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChangeEvent, JSX, MouseEvent, useState } from "react";
 import Swal from "sweetalert2";
 import { useLoaderDispatch } from "../../provider/LoaderProvider";
-import ChangePasswordDTO from "@/src/types/account/ChangePasswordDTO";
+import ChangePasswordDTO from "@/src/types/data/UserTransfer";
 
 export default function ButtonChangePassword({
   buttonContent,
@@ -47,6 +47,7 @@ export default function ButtonChangePassword({
   title: string;
   content?: string;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Profile");
   const router = useRouter();
   const session = useSession();
@@ -97,29 +98,40 @@ export default function ButtonChangePassword({
       newPassword: newPassword,
     };
 
-    fetch("/api/account/changeUserPassword", {
+    fetch("/api/auth/changeUserPassword", {
       method: "POST",
+      headers: { "accept-language": locale },
       body: JSON.stringify(dto),
     })
-      .then(async (res) => await res.json())
-      .then(({ success }) => {
-        if (success) {
-          Swal.fire({
-            title: t("alertSuccessTitle"),
-            text: t("changePasswordSuccessfully"),
-            icon: "success",
-          }).then(() => {
-            handleClose();
-            router.replace("/signin");
-          });
-        } else {
-          Swal.fire({
-            title: t("alertErrorTitle"),
-            text: t("alertError"),
-            icon: "error",
-          });
-        }
-      })
+      .then((res) =>
+        res
+          .json()
+          .then(({ success }) => {
+            if (success) {
+              Swal.fire({
+                title: t("alertSuccessTitle"),
+                text: t("changePasswordSuccessfully"),
+                icon: "success",
+              }).then(() => {
+                handleClose();
+                router.replace("/signin");
+              });
+            } else {
+              Swal.fire({
+                title: t("alertErrorTitle"),
+                text: t("alertError"),
+                icon: "error",
+              });
+            }
+          })
+          .catch((err) => {
+            Swal.fire({
+              title: t("alertErrorTitle"),
+              text: err,
+              icon: "error",
+            });
+          }),
+      )
       .catch((err) => {
         Swal.fire({
           title: t("alertErrorTitle"),

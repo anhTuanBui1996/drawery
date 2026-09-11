@@ -11,6 +11,20 @@
     "eula": "Thỏa thuận giấy phép người dùng cuối",
     "privacy": "Chính sách quyền riêng tư"
   },
+  "DrawingHeader": {
+    "profile": "Hồ sơ",
+    "account": "Tài khoản",
+    "logout": "Đăng xuất",
+    "darkMode": "Tối",
+    "lightMode": "Sáng",
+    "dashboard": "Bảng điều khiển",
+    "logOutSuccessfully": "Đăng xuất thành công!",
+    "noTitle": "Không có tiêu đề",
+    "updateTitleSuccessfully": "Cập nhật tiêu đề thành công!",
+    "addNewTable": "Thêm bảng mới",
+    "tableInTableName": "Bang",
+    "columnInColumnName": "Cot"
+  },
   "LanguageSelector": {
     "title": "Chọn ngôn ngữ"
   },
@@ -70,7 +84,6 @@
     "ctaTitle": "Bạn đã sẵn sàng để chuyển đổi quy trình thiết kế cơ sở dữ liệu của mình chưa?",
     "ctaSubtitle": "Tham gia cùng hàng ngàn chuyên gia đã tối ưu hóa quy trình thiết kế cơ sở dữ liệu của họ với công cụ của chúng tôi.",
     "ctaButton": "Bắt đầu miễn phí",
-    "ctaButtonDemo": "Đặt lịch demo",
     "ctaCredit": "Không cần thẻ tín dụng • Dùng thử miễn phí 14 ngày • Hủy bất cứ lúc nào",
     "linkEula": "Thỏa thuận giấy phép người dùng cuối",
     "linkPrivacy": "Chính sách quyền riêng tư"
@@ -173,7 +186,28 @@
     "send": "Gửi",
     "submit": "Xác nhận",
     "cancel": "Hủy",
-    "signOutAllDevices": "Đăng xuất khỏi tất cả thiết bị sau khi đổi mật khẩu"
+    "signOutAllDevices": "Đăng xuất khỏi tất cả thiết bị sau khi đổi mật khẩu",
+    "invalidEmail": "Email không hợp lệ!",
+    "invalidAppUrl": "Url yêu cầu không hợp lệ!",
+    "userNotFound": "Không tìm thấy người dùng!",
+    "cantChangePassword": "Không thể cập nhật mật khẩu!",
+    "cantDeleteUser": "Không thể xóa người dùng này!",
+    "cantDeleteAccountOfThisUser": "Không thể xóa tài khoản của người dùng này!",
+    "internalServerError": "Lỗi máy chủ nội bộ. Vui lòng thử lại sau.",
+    "nameRequired": "Tên hiển thị không được để trống",
+    "displayNameTooLong": "Tên hiển thị quá dài",
+    "invalidPhone": "Số điện thoại không hợp lệ",
+    "bioTooLong": "Giới thiệu cá nhân quá dài",
+    "fileNotFound": "Không tìm thấy file",
+    "invalidFileType": "Chỉ chấp nhận file JPEG, PNG hoặc WEBP",
+    "cantDeleteOldAvatar": "Không thể xóa avatar cũ",
+    "fileExceed50BM": "File vượt quá 50MB",
+    "noLinkAccount": "Không có tài khoản liên kết để hủy",
+    "noProviderInfo": "Thiếu thông tin provider",
+    "invalidProvider": "Provider không hợp lệ",
+    "unauthorized": "Chưa xác thực",
+    "cantUpdateVerifyCode": "Không thể cập nhật mã xác thực cho người dùng!",
+    "deleteDiagramFail": "Xóa lược đồ của người dùng thất bại!"
   },
   "Privacy": {
     "title": "Chính sách bảo mật",
@@ -318,6 +352,41 @@
     "contactEmail": "anbuta.it@gmail.com"
   },
   "Dashboard": {
-    "myDiagrams": "Các lược đồ quan hệ của bạn"
+    "alertError": "Đã có lỗi xảy ra! Vui lòng thử lại...",
+    "alertErrorTitle": "Lỗi",
+    "myERD": "Các lược đồ quan hệ của bạn",
+    "addNewERD": "Thêm ERD mới",
+    "selectMany": "Chọn nhiều",
+    "noSessionFound": "Không tìm thấy phiên làm việc",
+    "unauthorized": "Không được phép truy cập",
+    "noDiagramsAddNew": "Chưa có lược đồ nào, tạo mới"
+  },
+  "DashboardCard": {
+    "shareDiagram": "Chia sẻ lược đồ",
+    "removeDiagram": "Xóa lược đồ",
+    "noTitle": "Chưa có tiêu đề",
+    "createdAt": "Tạo lúc",
+    "lastUpdatedAt": "Cập nhật cuối lúc"
+  },
+  "Drawing": {
+    "invalidId": "Id không hợp lệ",
+    "notFound": "Không tìm thấy lược đồ",
+    "forbidden": "Từ chối truy cập",
+    "alertError": "Đã có lỗi xảy ra! Vui lòng thử lại...",
+    "noTitle": "Không có tiêu đề",
+    "unauthorized": "Chưa xác thực",
+    "sendUpdateTitleFail": "Gửi yêu cầu cập nhật tiêu đề thất bại",
+    "sendUpdateFlowDataFail": "Gửi yêu cầu cập nhât dữ liệu thất bại",
+    "updateFail": "Đã xảy ra lỗi trong quá trình cập nhật lược đồ",
+    "tableName": "Tên bảng",
+    "columnInColumnName": "Cot",
+    "columnName": "Tên cột",
+    "addNewColumn": "Thêm cột mới",
+    "dataType": "Kiểu dữ liệu",
+    "allowNull": "Cho phép null",
+    "notAllowSpace": "Không được có khoảng trắng",
+    "notAllowEmpty": "Không được để trống",
+    "notAllowSpecialCharacterOrBeginWithNumber": "Không được để ký tự đặc biệt (ngoại trừ _) hoặc bắt đầu bằng số",
+    "tableNameExist": "Tên bảng đã tồn tại"
   }
 }

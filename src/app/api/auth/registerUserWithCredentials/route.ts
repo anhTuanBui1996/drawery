@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import client from "@/src/lib/db";
-import { ExtendedAdapterUser } from "@/src/types/auth/ExtendedAdapterUser";
+import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
 import { ObjectId } from "mongodb";
 import { getTranslations } from "next-intl/server";
 import adapter from "@/src/lib/adapter";
+import { routing } from "@/src/i18n/routing";
 
 export async function POST(req: Request) {
-  const t = await getTranslations("SignIn");
+  const locale = req.headers.get("accept-language") || routing.defaultLocale;
+  const t = await getTranslations({ locale, namespace: "SignIn" });
   try {
     const { firstName, lastName, email, password, username } =
       (await req.json()) as ExtendedAdapterUser;

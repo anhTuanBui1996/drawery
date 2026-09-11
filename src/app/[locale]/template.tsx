@@ -13,6 +13,7 @@ export default function Template({
     <Box
       sx={{
         bgcolor: s.mode === "light" ? "#f9fafb" : "#313131",
+        minHeight: "calc(100vh - 64px)",
       }}
     >
       {children}

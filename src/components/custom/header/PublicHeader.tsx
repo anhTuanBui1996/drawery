@@ -33,6 +33,7 @@ export default function PublicHeader() {
           variant="contained"
           size="large"
           endIcon={<LoginRounded />}
+          disabled={s.status === "loading"}
           sx={{
             px: 2,
             py: 1,

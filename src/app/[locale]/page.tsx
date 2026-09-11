@@ -28,9 +28,11 @@ import {
 import { useTranslations } from "next-intl";
 import CustomBox from "@/src/components/custom/background/CustomBox";
 import { Link } from "@/src/i18n/navigation";
+import { useSession } from "next-auth/react";
 
 const Index = () => {
   const t = useTranslations("/");
+  const s = useSession();
   const features = [
     {
       icon: <Database className="w-6 h-6" />,
@@ -163,28 +165,32 @@ const Index = () => {
                 justifyContent: "center",
               }}
             >
-              <Button
-                variant="contained"
-                size="large"
-                endIcon={<ArrowRight size={20} />}
-                sx={{
-                  bgcolor: "white",
-                  color: "#2563eb",
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  fontSize: "1.125rem",
-                  "&:hover": {
-                    bgcolor: "#eff6ff",
-                    transform: "translateY(-2px)",
-                    boxShadow: 4,
-                  },
-                  transition: "all 0.3s",
-                }}
+              <Link
+                href={s.status === "authenticated" ? "/dashboard" : "/signin"}
               >
-                {t("buttonStartCreating")}
-              </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  endIcon={<ArrowRight size={20} />}
+                  sx={{
+                    bgcolor: "white",
+                    color: "#2563eb",
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    fontSize: "1.125rem",
+                    "&:hover": {
+                      bgcolor: "#eff6ff",
+                      transform: "translateY(-2px)",
+                      boxShadow: 4,
+                    },
+                    transition: "all 0.3s",
+                  }}
+                >
+                  {t("buttonStartCreating")}
+                </Button>
+              </Link>
               <Button
                 variant="outlined"
                 size="large"
@@ -613,28 +619,32 @@ const Index = () => {
                 mb: 2,
               }}
             >
-              <Button
-                variant="contained"
-                size="large"
-                endIcon={<ArrowRight size={20} />}
-                sx={{
-                  bgcolor: "white",
-                  color: "#2563eb",
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 3,
-                  fontWeight: 600,
-                  fontSize: "1.125rem",
-                  "&:hover": {
-                    bgcolor: "#eff6ff",
-                    transform: "translateY(-2px)",
-                    boxShadow: 8,
-                  },
-                  transition: "all 0.3s",
-                }}
+              <Link
+                href={s.status === "authenticated" ? "/dashboard" : "/signin"}
               >
-                {t("ctaButton")}
-              </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  endIcon={<ArrowRight size={20} />}
+                  sx={{
+                    bgcolor: "white",
+                    color: "#2563eb",
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    fontSize: "1.125rem",
+                    "&:hover": {
+                      bgcolor: "#eff6ff",
+                      transform: "translateY(-2px)",
+                      boxShadow: 8,
+                    },
+                    transition: "all 0.3s",
+                  }}
+                >
+                  {t("ctaButton")}
+                </Button>
+              </Link>
               <Button
                 variant="outlined"
                 size="large"
@@ -656,7 +666,7 @@ const Index = () => {
                   transition: "all 0.3s",
                 }}
               >
-                {t("ctaButtonDemo")}
+                {t("buttonWatchDemo")}
               </Button>
             </Box>
 

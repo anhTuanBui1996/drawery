@@ -15,7 +15,7 @@ import {
   TextField,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChangeEvent, FormEvent, JSX, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
@@ -39,6 +39,7 @@ export default function ButtonDeleteUser({
   title: string;
   content: string;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Profile");
   const router = useRouter();
   const session = useSession();
@@ -126,6 +127,7 @@ export default function ButtonDeleteUser({
   const handleSendConfirmationCodeMail = async () => {
     return await fetch("/api/utils/sendConfirmationCodeMailForDeleteUser", {
       method: "POST",
+      headers: { "accept-language": locale },
     });
   };
 
@@ -149,6 +151,7 @@ export default function ButtonDeleteUser({
 
     fetch("/api/auth/deleteUser", {
       method: "DELETE",
+      headers: { "accept-language": locale },
       body: JSON.stringify({
         email: session.data?.user.email,
         password,
