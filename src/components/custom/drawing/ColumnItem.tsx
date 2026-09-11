@@ -12,11 +12,11 @@ import {
 } from "@mui/material";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslations } from "next-intl";
-import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
+import { ChangeEvent, KeyboardEvent, memo, useRef, useState } from "react";
 import DataTypeSelector from "./DataTypeSelector";
 import { invalidCharRegexInName } from "@/src/lib/utils";
 
-export default function ColumnItem({
+function ColumnItem({
   tableId,
   columnId,
   columnProps,
@@ -210,3 +210,5 @@ export default function ColumnItem({
     </ListItem>
   );
 }
+
+export default memo(ColumnItem);
