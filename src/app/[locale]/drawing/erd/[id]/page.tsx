@@ -1,4 +1,3 @@
-import { DiagramInfo } from "@/src/types/model/DiagramData";
 import ERD from "./ui";
 
 export default async function Page({

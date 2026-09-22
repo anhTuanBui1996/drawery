@@ -8,7 +8,6 @@ import { authOptions } from "@/src/lib/auth";
 import { routing } from "@/src/i18n/routing";
 import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
 import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
-import { Node } from "@xyflow/react";
 import { ObjectId } from "mongodb";
 
 export async function DELETE(req: NextRequest) {

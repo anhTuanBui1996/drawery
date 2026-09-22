@@ -18,7 +18,7 @@ import {
 import GitHubIcon from "@mui/icons-material/GitHub";
 import GoogleIcon from "@/src/components/custom/icon/GoogleIcon";
 import { SiNetlify as NetlifyIcon } from "react-icons/si";
-import AppLogo from "@/src/components/layout/AppLogo";
+import AppLogo from "@/src/components/custom/layout/AppLogo";
 import Swal from "sweetalert2";
 import {
   ClientSafeProvider,

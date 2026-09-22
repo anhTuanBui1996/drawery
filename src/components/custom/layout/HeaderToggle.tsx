@@ -4,10 +4,10 @@ import React from "react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import { usePathname } from "@/src/i18n/navigation";
-import AppHeader from "../custom/header/AppHeader";
-import DrawHeader from "../custom/header/DrawHeader";
+import AppHeader from "../header/AppHeader";
+import DrawHeader from "../header/DrawHeader";
 import { styled } from "@mui/material/styles";
-import PublicHeader from "../custom/header/PublicHeader";
+import PublicHeader from "../header/PublicHeader";
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
   open?: boolean;
@@ -30,6 +30,8 @@ const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
     },
   ],
 }));
+
+export const drawingHeaderBaseWidth = 430;
 
 export default function HeaderToggle({
   locale,
@@ -88,7 +90,9 @@ export default function HeaderToggle({
         lang={locale}
         style={{
           paddingTop: isInPublicPages || isInIndexPage ? undefined : "64px",
-          paddingLeft: isInDrawingPage ? "400px" : undefined,
+          paddingLeft: isInDrawingPage
+            ? `${drawingHeaderBaseWidth}px`
+            : undefined,
         }}
       >
         {children}

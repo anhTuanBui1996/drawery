@@ -55,11 +55,12 @@ export async function GET(
       ownerAvatar: owner?.image,
       ownerName: owner?.name,
       title: diagram.title,
+      providerName: diagram.provider,
     };
 
     return NextResponse.json({ success: true, diagramInfo });
   } catch (err) {
-    console.error("POST /api/data/updateDiagramTitle error:", err);
+    console.error("GET /api/data/diagram/[id]/getDiagramInfo error:", err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

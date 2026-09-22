@@ -30,9 +30,10 @@ export async function GET(req: NextRequest) {
         isOwned: isOwner,
         isPrivate: doc.isPrivate,
         createdAt: doc.createdAt,
-        lastUpdatedAt: doc.updatedAt ?? doc.createdAt,
+        lastUpdatedAt: doc.updatedAt,
         diagramId: doc._id.toHexString(),
         title: doc.title ?? undefined,
+        providerName: doc.provider
       };
       if (isOwner) {
         res.ownerAvatar = session.user.image;

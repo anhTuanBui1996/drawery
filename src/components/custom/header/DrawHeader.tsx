@@ -1,6 +1,13 @@
 "use client";
 
-import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { styled, useColorScheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
@@ -24,11 +31,11 @@ import {
   TextField,
   Tooltip,
 } from "@mui/material";
-import AppLogo from "../../layout/AppLogo";
+import AppLogo from "../layout/AppLogo";
 import { getPathname, Link } from "@/src/i18n/navigation";
 import { InfoIcon } from "lucide-react";
-import LanguageSelector from "../../layout/LanguageSelector";
-import SwitchTheme from "../../layout/SwitchTheme";
+import LanguageSelector from "../layout/LanguageSelector";
+import SwitchTheme from "../layout/SwitchTheme";
 import Swal from "sweetalert2";
 import { enqueueSnackbar } from "notistack";
 import { useLocale, useTranslations } from "next-intl";
@@ -43,7 +50,11 @@ import { useNodes, useReactFlow } from "@xyflow/react";
 import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
 import { nanoid } from "nanoid";
 import TableListItem from "../drawing/TableListItem";
-import { getRandomMuiColor } from "@/src/lib/utils";
+import { getRandomMuiColor } from "@/src/utils/client";
+import { drawingHeaderBaseWidth } from "../layout/HeaderToggle";
+import { move } from "@dnd-kit/helpers";
+import { DragDropProvider } from "@dnd-kit/react";
+import DiagramMenu from "../drawing/DiagramMenu";
 
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
@@ -82,7 +93,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 export default function DrawingHeaderBar({
-  sideMenuWidth = 400,
+  sideMenuWidth = drawingHeaderBaseWidth,
 }: {
   sideMenuWidth?: number;
 }) {
@@ -100,10 +111,16 @@ export default function DrawingHeaderBar({
     NodeRelationEdge
   >();
   const currentNodes = useNodes<TableNodeData>();
+  const sortedNodes = useMemo(
+    () => [...currentNodes].sort((a, b) => a.data.index - b.data.index),
+    [currentNodes],
+  );
 
   const [isEditTitle, setIsEditTitle] = useState<Boolean>(false);
   const [currenTitle, setCurrentTitle] = useState<string>("");
   const titleRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const tableDragAndDropContainer = useRef<HTMLDivElement | null>(null);
+  const { setNodes } = useReactFlow<TableNodeData, NodeRelationEdge>();
 
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
@@ -180,17 +197,17 @@ export default function DrawingHeaderBar({
 
   const handleAddNewTable = () => {
     if (diagramInfo) {
-      const randomOffsetX = (Math.random() - 0.5) * 200; // lệch ngẫu nhiên trong khoảng ±100px
+      const randomOffsetX = (Math.random() - 0.5) * 200; // lệch ngẫu nhiên trong khoảng ±200px
       const randomOffsetY = (Math.random() - 0.5) * 200;
 
       const position = screenToFlowPosition({
-        x: window.innerWidth / 2 + randomOffsetX,
-        y: window.innerHeight / 2 + randomOffsetY,
+        x: window.innerWidth / 2 - 300 + randomOffsetX,
+        y: window.innerHeight / 2 - 300 + randomOffsetY,
       });
 
-      const newTableId = nanoid();
-      const firstColumnName = `${t("columnInColumnName")}_0`;
-      const firstColumnId = nanoid();
+      const newTableId = "table_" + nanoid();
+      const firstColumnName = "ID";
+      const firstColumnId = "column_" + nanoid();
       const newNode: TableNodeData = {
         id: newTableId,
         position,
@@ -205,15 +222,37 @@ export default function DrawingHeaderBar({
             [firstColumnId]: {
               columnName: firstColumnName,
               dataType: {
-                type: "varchar",
-                params: [100],
+                type: "int",
+                params: [],
+                inputType: "number",
               },
-              isNullable: true,
+              isNullable: false,
+              identity: {
+                seed: 1,
+                increment: 1,
+              },
+            },
+          },
+          keys: {
+            primaryKey: {
+              keyName: `PK_${t("tableInTableName")}_${currentNodes.length}`,
+              columnIds: [{ columnId: firstColumnId, sortType: "asc" }],
+              isUnique: true,
             },
           },
         },
       };
       addNodes(newNode);
+
+      // Thêm đoạn này để tự động cuộn xuống dưới cùng sau khi node được thêm vào DOM
+      setTimeout(() => {
+        if (tableDragAndDropContainer.current) {
+          tableDragAndDropContainer.current.scrollTo({
+            top: tableDragAndDropContainer.current.scrollHeight,
+            behavior: "smooth", // Cuộn mượt mà
+          });
+        }
+      }, 100); // Delay nhẹ một chút để chờ React render phần tử mới vào DOM
     }
   };
 
@@ -227,8 +266,8 @@ export default function DrawingHeaderBar({
         sx={{
           backgroundImage:
             colorScheme.mode === "light"
-              ? "linear-gradient(135deg, #a8e3ff 0%, #c1c6cd 50%, #77bff1 100%)"
-              : "linear-gradient(135deg, #2d4ca2 0%, #2f4975 50%, #06b6d4 100%)",
+              ? "linear-gradient(135deg, #b8d0de 0%, #c1c6cd 50%, #77bff1 100%)"
+              : "linear-gradient(135deg, #2e4a83 0%, #2f4975 50%, #06b6d4 100%)",
         }}
       >
         <Toolbar>
@@ -381,8 +420,8 @@ export default function DrawingHeaderBar({
             sx: {
               backgroundImage:
                 colorScheme.mode === "light"
-                  ? "linear-gradient(135deg, #a8e3ff 0%, #c1c6cd 50%, #77bff1 100%)"
-                  : "linear-gradient(135deg, #2f4975 5%, #2d4ca2 30%, #12899d 100%)",
+                  ? "linear-gradient(135deg, #77bff1 0%, #c1c6cd 20%, #a8e3ff 100%)"
+                  : "linear-gradient(135deg, #12899d 0%, #2f4975 20%, #2d4ca2 100%)",
             },
           },
         }}
@@ -392,16 +431,14 @@ export default function DrawingHeaderBar({
       >
         <DrawerHeader
           sx={{
-            justifyContent: "left",
-            backgroundImage:
-              colorScheme.mode === "light"
-                ? "linear-gradient(135deg, #77bff1 0%, #c1c6cd 20%, #a8e3ff 100%)"
-                : "linear-gradient(135deg, #12899d 0%, #2f4975 20%, #2d4ca2 100%)",
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
           <Typography variant="h6" noWrap component="div" mr={2}>
             <AppLogo />
           </Typography>
+          <DiagramMenu diagramId={diagramInfo?.diagramId} />
         </DrawerHeader>
         <Button
           startIcon={<FaPlus size={12} />}
@@ -415,19 +452,26 @@ export default function DrawingHeaderBar({
         </Button>
         <Divider />
         <List
+          component={"div"}
           sx={{
             display: "flex",
             flexDirection: "column",
+            alignItems: "center",
             height: "calc(100vh - 64px + 30px + 1px)",
             overflowY: "auto",
-            scrollbarWidth: "thin",
             px: "5px",
             gap: "10px",
           }}
+          ref={tableDragAndDropContainer}
         >
-          {currentNodes
-            .sort((a, b) => a.data.index - b.data.index)
-            .map(({ selected, data, id }, index) => (
+          <DragDropProvider
+            onDragEnd={(e) => {
+              setNodes((nodes: TableNodeData[]) => {
+                return move(nodes, e);
+              });
+            }}
+          >
+            {sortedNodes.map(({ selected, data, id }, index) => (
               <TableListItem
                 key={id}
                 id={id}
@@ -438,6 +482,7 @@ export default function DrawingHeaderBar({
                 selected={selected}
               />
             ))}
+          </DragDropProvider>
         </List>
       </Drawer>
     </Box>

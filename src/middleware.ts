@@ -2,7 +2,7 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { getLocaleFromPathname } from "./lib/utils";
+import { getLocaleFromPathname } from "./utils/server";
 
 const excludedPathsWithNoToken = [
   "/privacy",

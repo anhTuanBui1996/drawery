@@ -1,7 +1,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import HeaderToggle from "@/src/components/layout/HeaderToggle";
+import HeaderToggle from "@/src/components/custom/layout/HeaderToggle";
 import { EmotionProvider } from "@/src/components/provider/EmotionProvider";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import LoaderProvider from "./LoaderProvider";
@@ -10,6 +10,9 @@ import { grey } from "@mui/material/colors";
 import DrawingProvider from "./DrawingProvider";
 import { ReactFlowProvider } from "@xyflow/react";
 import { ScrollTargetsProvider } from "./ScrollTargetProvider";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import type {} from "@mui/x-date-pickers/themeAugmentation";
 
 const theme = createTheme({
   colorSchemes: {
@@ -22,6 +25,13 @@ const theme = createTheme({
       main: grey[700],
     },
   },
+  components: {
+    MuiDatePicker: {
+      defaultProps: {
+        displayWeekNumber: true,
+      },
+    },
+  },
 });
 
 export function Providers({
@@ -32,20 +42,22 @@ export function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchOnWindowFocus={true} refetchInterval={5 * 60}>
       <EmotionProvider>
         <ThemeProvider theme={theme} defaultMode="light">
-          <LoaderProvider>
-            <SnackbarProvider maxSnack={3}>
-              <ReactFlowProvider>
-                <ScrollTargetsProvider>
-                  <DrawingProvider>
-                    <HeaderToggle locale={locale}>{children}</HeaderToggle>
-                  </DrawingProvider>
-                </ScrollTargetsProvider>
-              </ReactFlowProvider>
-            </SnackbarProvider>
-          </LoaderProvider>
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <LoaderProvider>
+              <SnackbarProvider maxSnack={3}>
+                <ReactFlowProvider>
+                  <ScrollTargetsProvider>
+                    <DrawingProvider>
+                      <HeaderToggle locale={locale}>{children}</HeaderToggle>
+                    </DrawingProvider>
+                  </ScrollTargetsProvider>
+                </ReactFlowProvider>
+              </SnackbarProvider>
+            </LoaderProvider>
+          </LocalizationProvider>
         </ThemeProvider>
       </EmotionProvider>
     </SessionProvider>

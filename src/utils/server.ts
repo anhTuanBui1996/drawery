@@ -1,8 +1,6 @@
-import { routing } from "@/src/i18n/routing";
+import { routing } from "../i18n/routing";
 import { EdgeDocument, NodeDocument } from "../types/data/DiagramTransfer";
 import { NodeRelationEdge, TableNodeData } from "../types/model/TableNode";
-import * as muiColors from "@mui/material/colors";
-import { keyframes } from "@emotion/react";
 
 /**
  * Extracts the locale segment from a URL pathname, falling back to the default locale.
@@ -63,6 +61,7 @@ export function toTableNodeData(node: NodeDocument): TableNodeData {
       _id: node._id,
       index: node.index,
       diagramId: node.diagramId.toString(),
+      keys: { primaryKey: { columnIds: [], isUnique: true, keyName: "" } },
     },
   };
 }
@@ -99,32 +98,3 @@ export function toEdgeDocument(
     target: newEdge.target,
   };
 }
-
-const HUES = [
-  "red",
-  "pink",
-  "purple",
-  "deepPurple",
-  "indigo",
-  "blue",
-  "lightBlue",
-  "cyan",
-  "teal",
-  "green",
-  "lightGreen",
-  "lime",
-  "yellow",
-  "amber",
-  "orange",
-  "deepOrange",
-  "brown",
-  "grey",
-  "blueGrey",
-] as const;
-
-export function getRandomMuiColor(shade: keyof typeof muiColors.red = 500) {
-  const hue = HUES[Math.floor(Math.random() * HUES.length)];
-  return (muiColors as any)[hue][shade] as string;
-}
-
-export const invalidCharRegexInName = new RegExp(/^[a-zA-Z_][a-zA-Z0-9_]*$/);

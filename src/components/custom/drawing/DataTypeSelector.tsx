@@ -1,11 +1,12 @@
+import { getDataTypeList } from "@/src/utils/client";
+import { SQLProviderName } from "@/src/types/data/DiagramTransfer";
 import {
   ColumnDataType,
-  getDataTypeList,
   NodeRelationEdge,
-  SQLProviderName,
   TableNodeData,
 } from "@/src/types/model/TableNode";
 import {
+  Box,
   Button,
   FormControl,
   InputLabel,
@@ -82,6 +83,7 @@ export default function DataTypeSelector({
                 dataType: newDefaultDataType || {
                   type: "varchar",
                   params: [100],
+                  inputType: "text",
                 },
               },
             },
@@ -133,16 +135,40 @@ export default function DataTypeSelector({
       <Button
         id={buttonId}
         onClick={handleClick}
-        sx={{ textTransform: "none" }}
+        variant="outlined"
+        sx={{
+          textTransform: "none",
+          display: "flex",
+          justifyContent: "start",
+          overflow: "hidden",
+          width: "150px",
+        }}
       >
-        {dataType.type}
-        {dataType.params.length ? `(${dataType.params.join(",")})` : ""}
+        <Box
+          component="span"
+          sx={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {dataType.type}
+          {dataType.params.length ? `(${dataType.params.join(",")})` : ""}
+        </Box>
       </Button>
       <Menu
         id={menuId}
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
         slotProps={{
           paper: {
             sx: {

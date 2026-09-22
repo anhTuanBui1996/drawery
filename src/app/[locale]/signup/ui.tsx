@@ -25,7 +25,7 @@ import {
   LiteralUnion,
   signIn,
 } from "next-auth/react";
-import AppLogo from "@/src/components/layout/AppLogo";
+import AppLogo from "@/src/components/custom/layout/AppLogo";
 import CustomBox from "@/src/components/custom/background/CustomBox";
 import { BuiltInProviderType } from "next-auth/providers/index";
 

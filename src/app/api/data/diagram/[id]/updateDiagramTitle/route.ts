@@ -74,6 +74,7 @@ export async function PATCH(
         ownerAvatar: owner?.image,
         ownerName: owner?.name,
         title: newDiagram.title,
+        providerName: newDiagram.provider,
       };
 
       return NextResponse.json({

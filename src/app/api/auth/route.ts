@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/src/i18n/routing";
 import { DiagramInfo } from "@/src/types/model/DiagramData";
+import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
 
 export async function POST(req: NextRequest) {
   const locale = req.headers.get("accept-language") || routing.defaultLocale;
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const db = client.db(process.env.MONGODB_DATA_DB_NAME);
 
-    const diagram = await db.collection("diagrams").findOne({
+    const diagram = await db.collection<DiagramDocument>("diagrams").findOne({
       _id: new ObjectId(diagramId),
     });
 
@@ -47,9 +48,10 @@ export async function POST(req: NextRequest) {
       isOwned: isOwner,
       isPrivate: diagram.isPrivate,
       createdAt: diagram.createdAt,
-      lastUpdatedAt: diagram.lastUpdatedAt,
+      lastUpdatedAt: diagram.updatedAt,
       diagramId: diagram._id.toString(),
       title: diagram.title,
+      providerName: diagram.provider
     };
 
     if (!isOwner && owner) {

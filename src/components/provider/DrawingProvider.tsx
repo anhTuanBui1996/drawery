@@ -1,4 +1,3 @@
-import { toNodeRelationEdge, toTableNodeData } from "@/src/lib/utils";
 import { EdgeDocument, NodeDocument } from "@/src/types/data/DiagramTransfer";
 import { DiagramInfo } from "@/src/types/model/DiagramData";
 import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
@@ -179,46 +178,43 @@ export default function DrawingProvider({
     },
     [],
   );
-  const fetchNodeAndEdgeData = useCallback(
-    async (diagramId: string, isFirstLoad?: boolean) => {
-      dispatch({ type: "fetchNodeAndEdgeStart", diagramId });
-      try {
-        const resDiagramInfo = await fetch(
-          `/api/data/diagram/${diagramId}/getDiagramNodesAndEdges`,
-          {
-            headers: { "accept-language": locale },
+  const fetchNodeAndEdgeData = useCallback(async (diagramId: string) => {
+    dispatch({ type: "fetchNodeAndEdgeStart", diagramId });
+    try {
+      const resDiagramInfo = await fetch(
+        `/api/data/diagram/${diagramId}/getDiagramNodesAndEdges`,
+        {
+          headers: { "accept-language": locale },
+        },
+      );
+      const {
+        success,
+        nodes,
+        edges,
+        error,
+      }: {
+        success?: boolean;
+        nodes?: TableNodeData[];
+        edges?: NodeRelationEdge[];
+        error: string;
+      } = await resDiagramInfo.json();
+      if (success) {
+        dispatch({
+          type: "fetchNodeAndEdgeSuccess",
+          result: {
+            nodes: nodes || [],
+            edges: edges || [],
           },
-        );
-        const {
-          success,
-          nodes,
-          edges,
-          error,
-        }: {
-          success?: boolean;
-          nodes?: NodeDocument[];
-          edges?: EdgeDocument[];
-          error: string;
-        } = await resDiagramInfo.json();
-        if (success) {
-          dispatch({
-            type: "fetchNodeAndEdgeSuccess",
-            result: {
-              nodes: nodes ? nodes.map(toTableNodeData) : [],
-              edges: edges ? edges.map(toNodeRelationEdge) : [],
-            },
-          });
-        } else {
-          console.error(error);
-          dispatch({ type: "fetchNodeAndEdgeFail", error });
-        }
-      } catch (err) {
-        console.error(err);
-        dispatch({ type: "fetchNodeAndEdgeFail", error: err });
+        });
+      } else {
+        console.error(error);
+        dispatch({ type: "fetchNodeAndEdgeFail", error });
       }
-    },
-    [],
-  );
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: "fetchNodeAndEdgeFail", error: err });
+    }
+  }, []);
   //#endregion
 
   //#region UpdateData (server)

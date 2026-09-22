@@ -1,11 +1,11 @@
 import { Box, Button, CircularProgress } from "@mui/material";
-import SwitchTheme from "../../layout/SwitchTheme";
-import LanguageSelector from "../../layout/LanguageSelector";
+import SwitchTheme from "../layout/SwitchTheme";
+import LanguageSelector from "../layout/LanguageSelector";
 import { LoginRounded } from "@mui/icons-material";
 import { Link, usePathname } from "@/src/i18n/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import AppLogo from "../../layout/AppLogo";
+import AppLogo from "../layout/AppLogo";
 
 export default function PublicHeader() {
   const s = useSession();

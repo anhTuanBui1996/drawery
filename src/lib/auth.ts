@@ -9,6 +9,7 @@ import { NextAuthOptions } from "next-auth";
 import { ExtendedAdapterUser } from "../types/model/ExtendedAdapterUser";
 import { EmailConfig } from "next-auth/providers/index";
 import nodemailer from "nodemailer";
+import { ObjectId } from "mongodb";
 
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(client, {
@@ -99,13 +100,19 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.image = token.picture;
-        session.user.username = token.username;
-        session.user.emailVerified = token.emailVerified;
+      if (session.user && token.id) {
+        // Luôn lấy dữ liệu mới nhất từ DB thay vì chỉ dùng token cũ
+        const db = client.db(process.env.MONGODB_AUTH_DB_NAME);
+        const freshUser = await db
+          .collection("users")
+          .findOne(
+            { _id: new ObjectId(token.id as string) },
+            { projection: { name: 1, image: 1, email: 1 } },
+          );
+
+        session.user.id = token.id as string;
+        session.user.name = freshUser?.name ?? session.user.name;
+        session.user.image = freshUser?.image ?? session.user.image;
       }
       return session;
     },

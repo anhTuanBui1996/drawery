@@ -6,6 +6,8 @@ import {
   EdgeDocument,
   NodeDocument,
 } from "@/src/types/data/DiagramTransfer";
+import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
+import { toNodeRelationEdge, toTableNodeData } from "@/src/utils/server";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -44,18 +46,25 @@ export async function GET(
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
-    let nodes: NodeDocument[] = await db
-      .collection<NodeDocument>("nodes")
-      .find({ diagramId: new ObjectId(id) })
-      .toArray();
-    let edges: EdgeDocument[] = await db
-      .collection<EdgeDocument>("edges")
-      .find({ diagramId: new ObjectId(id) })
-      .toArray();
+    let nodes: TableNodeData[] = (
+      await db
+        .collection<NodeDocument>("nodes")
+        .find({ diagramId: new ObjectId(id) })
+        .toArray()
+    ).map(toTableNodeData);
+    let edges: NodeRelationEdge[] = (
+      await db
+        .collection<EdgeDocument>("edges")
+        .find({ diagramId: new ObjectId(id) })
+        .toArray()
+    ).map(toNodeRelationEdge);
 
     return NextResponse.json({ success: true, nodes, edges });
   } catch (err) {
-    console.error("POST /api/data/updateDiagramTitle error:", err);
+    console.error(
+      "GET /api/data/diagram/[id]/getDiagramNodesAndEdges error:",
+      err,
+    );
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

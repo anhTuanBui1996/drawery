@@ -13,19 +13,20 @@ import {
   Background,
   Controls,
   BackgroundVariant,
-  applyNodeChanges,
-  applyEdgeChanges,
   addEdge,
-  NodeChange,
-  EdgeChange,
   Connection,
+  useNodesState,
+  useEdgesState,
+  MiniMap,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import EntityNode from "@/src/components/custom/drawing/TableNodeItem";
+import RelationEdge from "@/src/components/custom/drawing/RelationEdgeItem";
 import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
 import { useLoaderDispatch } from "@/src/components/provider/LoaderProvider";
 
 const nodeTypes = { tableNode: EntityNode };
+const edgeTypes = { foreignKeyEdge: RelationEdge };
 
 export default function ERD({ id }: { id: string }) {
   const s = useColorScheme();
@@ -34,23 +35,39 @@ export default function ERD({ id }: { id: string }) {
   const isFirstLoading = useDrawingIsFirstLoading();
   const isLoading = useDrawingLoadingStatus();
   const loader = useLoaderDispatch();
-  const [nodes, setNodes] = useState<TableNodeData[]>([]);
-  const [edges, setEdges] = useState<NodeRelationEdge[]>([]);
+  const [nodes, _, onNodesChange] = useNodesState<TableNodeData>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<NodeRelationEdge>([]);
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange<TableNodeData>[]) =>
-      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    [],
-  );
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange<NodeRelationEdge>[]) =>
-      setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-    [],
-  );
+  const getNodeColor = (node: TableNodeData) => node.data.color;
+  const getNodeClassName = (node: TableNodeData) => node.type;
   const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-    [],
+    (params: Connection) => {
+      // Tìm node nguồn và node đích dựa trên ID từ Connection
+      const sourceNode = nodes.find((node) => node.id === params.source);
+      const targetNode = nodes.find((node) => node.id === params.target);
+
+      const sourceTableName = sourceNode?.data.tableName || "Source";
+      const targetTableName = targetNode?.data.tableName || "Target";
+
+      // Sinh tên quan hệ tự động (hoặc để trống tùy bạn)
+      const generatedRelationName = `FK_${sourceTableName}_${targetTableName}_0`;
+      const newEdge: NodeRelationEdge = {
+        ...params,
+        type: "foreignKeyEdge",
+        id: `${params.source}-${params.target}-${Date.now()}`,
+        data: {
+          diagramId: id,
+          relationType: "N - 1",
+          relationshipName: generatedRelationName, // Đã lấy được tên bảng động ở đây
+          isAutoNaming: true,
+          referentialAction: "noAction",
+          sourceColumns: [],
+          targetColumns: [],
+        },
+      };
+      setEdges((edgesSnapshot) => addEdge(newEdge, edgesSnapshot));
+    },
+    [id, nodes],
   );
 
   useEffect(() => {
@@ -72,6 +89,7 @@ export default function ERD({ id }: { id: string }) {
         <ReactFlow
           colorMode={s.mode}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           nodes={nodes}
           edges={edges}
@@ -79,6 +97,12 @@ export default function ERD({ id }: { id: string }) {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
         >
+          <MiniMap
+            zoomable
+            pannable
+            nodeClassName={getNodeClassName}
+            nodeColor={getNodeColor}
+          />
           <Background variant={BackgroundVariant.Lines} />
           <Controls />
         </ReactFlow>
