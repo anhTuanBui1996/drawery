@@ -1,17 +1,17 @@
 import { routing } from "@/src/i18n/routing";
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
 import {
   DiagramDocument,
   EdgeDocument,
   NodeDocument,
-} from "@/src/types/data/DiagramTransfer";
-import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
-import { toNodeRelationEdge, toTableNodeData } from "@/src/utils/server";
+} from "@/src/types/data/DiagramDocument";
+import { toEdgeDTO, toNodeDTO } from "@/src/utils/server";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
+import { EdgeDTO, NodeDTO } from "@/src/types/model/DiagramData";
 
 export async function GET(
   req: NextRequest,
@@ -46,23 +46,23 @@ export async function GET(
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
-    let nodes: TableNodeData[] = (
+    let nodes: NodeDTO[] = (
       await db
         .collection<NodeDocument>("nodes")
         .find({ diagramId: new ObjectId(id) })
         .toArray()
-    ).map(toTableNodeData);
-    let edges: NodeRelationEdge[] = (
+    ).map(toNodeDTO);
+    let edges: EdgeDTO[] = (
       await db
         .collection<EdgeDocument>("edges")
         .find({ diagramId: new ObjectId(id) })
         .toArray()
-    ).map(toNodeRelationEdge);
+    ).map(toEdgeDTO);
 
     return NextResponse.json({ success: true, nodes, edges });
   } catch (err) {
     console.error(
-      "GET /api/data/diagram/[id]/getDiagramNodesAndEdges error:",
+      `GET /api/data/diagram/${id}/getDiagramNodesAndEdges error:`,
       err,
     );
     return NextResponse.json({ error: t("alertError") }, { status: 500 });

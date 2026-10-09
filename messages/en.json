@@ -22,8 +22,13 @@
     "noTitle": "No title",
     "updateTitleSuccessfully": "Update title successfully!",
     "addNewTable": "Add new table",
+    "addNewRelationship": "Add new relationship",
     "tableInTableName": "Table",
-    "columnInColumnName": "Column"
+    "columnInColumnName": "Column",
+    "table": "Table",
+    "relationship": "Relationship",
+    "done": "Done!",
+    "syncing": "Syncing..."
   },
   "LanguageSelector": {
     "title": "Select language"
@@ -402,6 +407,7 @@
     "shareDiagram": "Share diagram",
     "removeDiagram": "Remove diagram",
     "changeColor": "Change color",
+    "randomColor": "Random color",
     "deleteColumn": "Delete column",
     "foreignKeyEdgeName": "Foreign key name",
     "selectType": "Select type",
@@ -418,11 +424,17 @@
     "setDefaultTooltip": "Set the values of the related foreign keys to the default value",
     "tableColumnsSpecification": "Tables and Columns Specification",
     "autoNamingRelationshipName": "Auto naming relationship name",
-    "foreignKeyOnSelectedTable": "Foreign key on selected table",
-    "primaryKeyOnReferenceTable": "Primary key / Unique index on reference table",
-    "sortType": "Sort type",
+    "foreignKeyOnSelectedTable": "Foreign key of",
+    "primaryKeyOnReferenceTable": "Primary key / Unique index of",
+    "sortOrder": "Sort order",
     "asc": "ascending",
     "desc": "descending",
-    "index": "Index"
+    "index": "Index",
+    "addNewRelationship": "Add new relationship",
+    "tableWithForeignKey": "Table with foreign key",
+    "tableForReference": "Table for reference",
+    "add": "Add",
+    "cancel": "Cancel",
+    "diagramDeletedAndRedirectToDashboard": "Diagram has been deleted and you will be redirected to the dashboard..."
   }
 }

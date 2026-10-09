@@ -1,8 +1,8 @@
 import { routing } from "@/src/i18n/routing";
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
-import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
-import { DiagramInfo } from "@/src/types/model/DiagramData";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
+import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import { DiagramDTO } from "@/src/types/model/DiagramData";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -24,16 +24,18 @@ export async function GET(req: NextRequest) {
       .find({ shares: new ObjectId(session.user.id) })
       .toArray();
 
-    const diagrams: DiagramInfo[] = rawDiagrams.map((doc) => {
+    const diagrams: DiagramDTO[] = rawDiagrams.map((doc) => {
       const isOwner = doc.ownerId.toString() === session.user.id;
-      let res: DiagramInfo = {
+      let res: DiagramDTO = {
         isOwned: isOwner,
         isPrivate: doc.isPrivate,
         createdAt: doc.createdAt,
-        lastUpdatedAt: doc.updatedAt,
-        diagramId: doc._id.toHexString(),
+        updatedAt: doc.updatedAt,
+        diagram_oid: doc._id.toString(),
         title: doc.title,
         providerName: doc.provider,
+        owner_oid: doc.ownerId.toString(),
+        shares: doc.shares.map((shareId) => shareId.toString()),
       };
       if (isOwner) {
         res.ownerAvatar = session.user.image;

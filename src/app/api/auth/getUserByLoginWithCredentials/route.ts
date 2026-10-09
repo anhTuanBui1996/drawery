@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { compare } from "bcrypt";
-import client from "@/src/lib/db";
-import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
-import adapter from "@/src/lib/adapter";
+import client from "@/src/lib/mongodb";
+import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
+import adapter from "@/src/lib/mongodbAdapter";
 
 export async function POST(req: Request) {
   try {

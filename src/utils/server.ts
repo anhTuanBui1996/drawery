@@ -1,6 +1,7 @@
+import { ObjectId } from "mongodb";
 import { routing } from "../i18n/routing";
-import { EdgeDocument, NodeDocument } from "../types/data/DiagramTransfer";
-import { NodeRelationEdge, TableNodeData } from "../types/model/TableNode";
+import { EdgeDocument, NodeDocument } from "../types/data/DiagramDocument";
+import { EdgeDTO, NodeDTO } from "../types/model/DiagramData";
 
 /**
  * Extracts the locale segment from a URL pathname, falling back to the default locale.
@@ -51,50 +52,40 @@ export function randomInt(max: number): number {
   return value % max;
 }
 
-export function toTableNodeData(node: NodeDocument): TableNodeData {
+//#region DTO conversion
+export function toNodeDTO(node: NodeDocument): NodeDTO {
   return {
-    id: node.id,
-    position: node.position,
-    type: "tableNode",
-    data: {
-      ...node.data,
-      _id: node._id,
-      index: node.index,
-      diagramId: node.diagramId.toString(),
-      keys: { primaryKey: { columnIds: [], isUnique: true, keyName: "" } },
-    },
+    ...node,
+    diagram_oid: node.diagramId.toString(),
+    node_oid: node._id.toString(),
   };
 }
 
-export function toNodeDocument(
-  sourceDocument: NodeDocument,
-  newNode: TableNodeData,
-): NodeDocument {
+export function toEdgeDTO(edge: EdgeDocument): EdgeDTO {
   return {
-    ...sourceDocument,
-    data: {
-      ...newNode.data,
-    },
-    position: newNode.position,
+    ...edge,
+    diagram_oid: edge.diagramId.toString(),
+    edge_oid: edge._id.toString(),
   };
 }
 
-export function toNodeRelationEdge(edge: EdgeDocument): NodeRelationEdge {
+export function toNodeDocument(node: NodeDTO): NodeDocument {
+  const { diagram_oid, node_oid, ...rest } = node;
   return {
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
+    ...rest,
+    _id: node.node_oid ? new ObjectId(node.node_oid) : new ObjectId(),
+    diagramId: new ObjectId(node.diagram_oid),
+    createdAt: node.createdAt || new Date(),
   };
 }
 
-export function toEdgeDocument(
-  sourceDocument: EdgeDocument,
-  newEdge: NodeRelationEdge,
-): EdgeDocument {
+export function toEdgeDocument(edge: EdgeDTO): EdgeDocument {
+  const { diagram_oid, edge_oid, ...rest } = edge;
   return {
-    ...sourceDocument,
-    id: newEdge.id,
-    source: newEdge.source,
-    target: newEdge.target,
+    ...rest,
+    _id: edge.edge_oid ? new ObjectId(edge.edge_oid) : new ObjectId(),
+    diagramId: new ObjectId(edge.diagram_oid),
+    createdAt: edge.createdAt || new Date(),
   };
 }
+//#endregion;

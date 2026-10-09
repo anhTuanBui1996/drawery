@@ -1,10 +1,8 @@
 import {
   ColumnProps,
   NodeRelationEdge,
-  PrimaryKey,
-  TableKeys,
   TableNodeData,
-} from "@/src/types/model/TableNode";
+} from "@/src/types/model/ExtendedNodeEdge";
 import {
   Badge,
   Box,
@@ -145,19 +143,19 @@ function ColumnItem({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const columnDragAndDrop = useRef<HTMLLIElement | null>(null);
-  const tableNode = useNodesData(tableId);
+  const tableNode = useNodesData<TableNodeData>(tableId);
   const primaryKeyState = useMemo(() => {
-    if (tableNode?.data) {
-      const tableKeys = tableNode.data["keys"] as TableKeys;
-      const foundColumn = tableKeys.primaryKey.columnIds.find(
+    const primaryKey = tableNode?.data.keys?.primaryKey;
+    if (primaryKey) {
+      const foundColumn = primaryKey.columnsWithIdAndSortOrder.find(
         (c) => c.columnId === columnId,
       );
       if (foundColumn) {
         return {
-          index: tableKeys.primaryKey.columnIds.findIndex(
+          index: primaryKey.columnsWithIdAndSortOrder.findIndex(
             (c) => c.columnId === columnId,
           ),
-          sortType: foundColumn.sortType,
+          sortOrder: foundColumn.sortOrder,
         };
       }
     }
@@ -189,30 +187,105 @@ function ColumnItem({
       });
     });
   };
-  const handleToggleIsPrimaryKey = (columnId: string) => {
+  const handleToggleIsPrimaryKey = (
+    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>,
+    columnId: string,
+  ) => {
+    e.stopPropagation();
     setNodes((nodes: TableNodeData[]) => {
       return nodes.map((node) => {
         if (node.id !== tableId) return node;
 
         const column = node.data.columns[columnId];
         if (!column) return node;
-        const primaryKeys = node.data.keys.primaryKey.columnIds;
+        const currentPrimaryKeys =
+          node.data.keys?.primaryKey?.columnsWithIdAndSortOrder;
+        const otherKeys = node.data.keys?.otherKeys;
         const willToggleOff = Boolean(primaryKeyState); // hành động này sẽ tắt đúng không (primaryKeyState nếu !undefined thì sẽ là sẽ tắt)?
+        const { keys, ...rest } = node.data;
+        if (willToggleOff) {
+          if (currentPrimaryKeys) {
+            const newColumnIds = currentPrimaryKeys.filter(
+              (c) => c.columnId !== columnId,
+            );
+            if (newColumnIds.length === 0) {
+              // Hủy primary key cột hiện tại và không còn khóa chính nào
+              if (otherKeys) {
+                return {
+                  ...node,
+                  selected: true,
+                  data: {
+                    ...rest,
+                    keys: {
+                      otherKeys,
+                    },
+                  },
+                };
+              }
+            } else {
+              // Hủy primary key cột hiện tại nhưng vẫn còn khóa chính khác
+              if (keys?.primaryKey) {
+                return {
+                  ...node,
+                  selected: true,
+                  data: {
+                    ...rest,
+                    keys: {
+                      ...keys,
+                      primaryKey: {
+                        ...keys.primaryKey,
+                        columnsWithIdAndSortOrder: newColumnIds,
+                      },
+                    },
+                  },
+                };
+              }
+            }
+          }
+        } else {
+          if (!currentPrimaryKeys) {
+            return {
+              ...node,
+              selected: true,
+              data: {
+                ...rest,
+                keys: {
+                  ...keys,
+                  primaryKey: {
+                    id: "primaryKey",
+                    keyName: `PK_${node.data.tableName}`,
+                    columnsWithIdAndSortOrder: [{ columnId, sortOrder: "asc" }],
+                    isUnique: true,
+                    isPrimary: true,
+                  },
+                },
+              },
+            };
+          } else if (keys?.primaryKey) {
+            return {
+              ...node,
+              selected: true,
+              data: {
+                ...rest,
+                keys: {
+                  ...keys,
+                  primaryKey: {
+                    ...keys.primaryKey,
+                    columnsWithIdAndSortOrder: currentPrimaryKeys.concat([
+                      { columnId, sortOrder: "asc" },
+                    ]),
+                  },
+                },
+              },
+            };
+          }
+        }
 
         return {
           ...node,
           selected: true,
           data: {
-            ...node.data,
-            keys: {
-              ...node.data.keys,
-              primaryKey: {
-                ...node.data.keys.primaryKey,
-                columnIds: willToggleOff
-                  ? primaryKeys.filter((c) => c.columnId !== columnId)
-                  : primaryKeys.concat([{ columnId, sortType: "asc" }]),
-              },
-            },
+            ...rest,
           },
         };
       });
@@ -228,8 +301,9 @@ function ColumnItem({
 
         const column = node.data.columns[columnId];
         if (!column) return node;
-        const primaryKeys = node.data.keys.primaryKey.columnIds;
-        const willToggleToDesc = primaryKeyState.sortType === "asc";
+        const primaryKey = node.data.keys?.primaryKey;
+        if (!primaryKey) return node;
+        const willToggleToDesc = primaryKeyState.sortOrder === "asc";
 
         return {
           ...node,
@@ -239,12 +313,13 @@ function ColumnItem({
             keys: {
               ...node.data.keys,
               primaryKey: {
-                ...node.data.keys.primaryKey,
-                columnIds: primaryKeys.map((c) =>
-                  c.columnId === columnId
-                    ? { ...c, sortType: willToggleToDesc ? "desc" : "asc" }
-                    : c,
-                ),
+                ...primaryKey,
+                columnsWithIdAndSortOrder:
+                  primaryKey.columnsWithIdAndSortOrder.map((c) =>
+                    c.columnId === columnId
+                      ? { ...c, sortOrder: willToggleToDesc ? "desc" : "asc" }
+                      : c,
+                  ),
               },
             },
           },
@@ -539,7 +614,7 @@ function ColumnItem({
 
   return (
     <ListItem
-      ref={columnDragAndDrop}
+      ref={dragable ? columnDragAndDrop : undefined}
       sx={{
         gap: "5px",
         justifyContent: "space-between",
@@ -596,7 +671,7 @@ function ColumnItem({
         }}
       />
       <Tooltip
-        title={`${t("primaryKey")}${primaryKeyState ? ` (${t("sortType")}: ${t(primaryKeyState.sortType)}, ${t("index")}: ${primaryKeyState.index})` : ""}`}
+        title={`${t("primaryKey")}${primaryKeyState ? ` (${t("sortOrder")}: ${t(primaryKeyState.sortOrder)}, ${t("index")}: ${primaryKeyState.index + 1})` : ""}`}
         placement="top-end"
         arrow
       >
@@ -608,7 +683,7 @@ function ColumnItem({
         >
           <Badge
             badgeContent={
-              primaryKeyState?.sortType === "desc" ? (
+              primaryKeyState?.sortOrder === "desc" ? (
                 <ArrowDropDown fontSize={"small"} />
               ) : (
                 <ArrowDropUp fontSize={"small"} />
@@ -632,7 +707,7 @@ function ColumnItem({
             <ListItemButton
               selected={!!primaryKeyState}
               disabled={columnProps.isNullable}
-              onClick={() => handleToggleIsPrimaryKey(columnId)}
+              onClick={(e) => handleToggleIsPrimaryKey(e, columnId)}
               sx={{
                 flexGrow: 1,
                 borderRadius: "5px",
@@ -713,6 +788,7 @@ function ColumnItem({
             sx: {
               px: "10px",
               py: "5px",
+              width: "300px",
             },
           },
         }}
@@ -749,7 +825,7 @@ function ColumnItem({
             </IconButton>
           </Tooltip>
         </Box>
-        <Collapse in={!!columnProps.identity}>
+        <Collapse in={!!columnProps.identity} hidden={!columnProps.identity}>
           <Box
             sx={{
               display: "flex",
@@ -758,7 +834,8 @@ function ColumnItem({
               justifyContent: "space-between",
               gap: "10px",
               width: "260px",
-              marginTop: "8px",
+              marginTop: !!columnProps.identity ? "8px" : undefined,
+              transition: "margin-top 0.1s ease-in",
             }}
           >
             <NumberField

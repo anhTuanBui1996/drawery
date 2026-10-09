@@ -5,7 +5,7 @@ import {
   marchingAntsBorderStyle,
   NodeRelationEdge,
   TableNodeData,
-} from "@/src/types/model/TableNode";
+} from "@/src/types/model/ExtendedNodeEdge";
 import {
   Box,
   Collapse,
@@ -65,7 +65,7 @@ function TableListItem({
   const dragIconColor = useMemo(() => {
     return theme.palette.getContrastText(color);
   }, [color]);
-  const [isShowColumns, setShowColumns] = useState<boolean>(true);
+  const [isShowColumns, setShowColumns] = useState<boolean>(false);
   const [isEditingTableName, setEditingTableName] = useState<boolean>(false);
   const [editingTableNameInvalid, setEditingTableNameInvalid] = useState<{
     isInvalid: boolean;
@@ -237,7 +237,7 @@ function TableListItem({
   return (
     <Paper
       sx={{
-        width: "400px",
+        width: "100%",
         boxShadow: selected ? 6 : 1,
         transition: `box-shadow 0.5s, 
           height 0.3s ease, 
@@ -290,7 +290,7 @@ function TableListItem({
               anchorEl={tableMenuState.anchorEl}
               tableId={id}
               handleClose={handleCloseTableMenu}
-              tableRef={tableDragAndDrop}
+              tableLisItemRef={tableDragAndDrop}
             />
             <Tooltip
               title={editingTableNameInvalid.message}
@@ -341,9 +341,10 @@ function TableListItem({
         sx={{
           position: "relative",
         }}
+        disablePadding
         ref={columnDragAndDropContainer}
       >
-        <Collapse in={isShowColumns} timeout="auto" unmountOnExit>
+        <Collapse in={isShowColumns} timeout="auto">
           <DragDropProvider
             onDragEnd={(e) => {
               setNodes((nodes: TableNodeData[]) => {

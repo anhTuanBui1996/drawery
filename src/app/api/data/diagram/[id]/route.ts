@@ -1,11 +1,11 @@
 import { routing } from "@/src/i18n/routing";
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
 import {
   DiagramDocument,
   EdgeDocument,
   NodeDocument,
-} from "@/src/types/data/DiagramTransfer";
+} from "@/src/types/data/DiagramDocument";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -46,7 +46,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, diagram });
   } catch (err) {
-    console.error("GET /api/data/diagram/[id] error:", err);
+    console.error(`GET /api/data/diagram/${id} error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }
@@ -105,7 +105,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, diagram });
   } catch (err) {
-    console.error("DELETE /api/data/diagram/[id] error:", err);
+    console.error(`DELETE /api/data/diagram/${id} error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

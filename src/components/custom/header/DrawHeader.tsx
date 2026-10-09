@@ -28,6 +28,8 @@ import {
   Menu,
   MenuItem,
   MenuList,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
 } from "@mui/material";
@@ -41,13 +43,17 @@ import { enqueueSnackbar } from "notistack";
 import { useLocale, useTranslations } from "next-intl";
 import { signOut, useSession } from "next-auth/react";
 import {
-  useDrawingDiagramInfo,
+  useDrawingDiagramDTO,
   useDrawingLoadingStatus,
-  useDrawingUpdateTitle,
+  useDrawingSyncingStatus,
+  useDrawingUpdateDiagram,
 } from "../../provider/DrawingProvider";
-import { FaEdit, FaPlus } from "react-icons/fa";
-import { useNodes, useReactFlow } from "@xyflow/react";
-import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
+import { FaCheckDouble, FaEdit, FaPlus } from "react-icons/fa";
+import { useEdges, useNodes, useReactFlow } from "@xyflow/react";
+import {
+  NodeRelationEdge,
+  TableNodeData,
+} from "@/src/types/model/ExtendedNodeEdge";
 import { nanoid } from "nanoid";
 import TableListItem from "../drawing/TableListItem";
 import { getRandomMuiColor } from "@/src/utils/client";
@@ -55,6 +61,10 @@ import { drawingHeaderBaseWidth } from "../layout/HeaderToggle";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import DiagramMenu from "../drawing/DiagramMenu";
+import CustomTabPanel from "../content/CustomTabPanel";
+import NewEdgeDialog from "../drawing/NewEdgeDialog";
+import RelationListItem from "../drawing/RelationListItem";
+import DrawingLoading from "../loader/DrawingLoading";
 
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean;
@@ -92,6 +102,13 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   justifyContent: "flex-end",
 }));
 
+const a11yProps = (index: number) => {
+  return {
+    id: `simple-tab-${index}`,
+    "aria-controls": `simple-tabpanel-${index}`,
+  };
+};
+
 export default function DrawingHeaderBar({
   sideMenuWidth = drawingHeaderBaseWidth,
 }: {
@@ -103,10 +120,11 @@ export default function DrawingHeaderBar({
   const t = useTranslations("DrawingHeader");
 
   const isDiagramLoading = useDrawingLoadingStatus();
-  const diagramInfo = useDrawingDiagramInfo();
-  const updateDiagramTitle = useDrawingUpdateTitle();
+  const isDiagramSyncing = useDrawingSyncingStatus();
+  const diagramInfo = useDrawingDiagramDTO();
+  const updateDiagram = useDrawingUpdateDiagram();
 
-  const { addNodes, screenToFlowPosition } = useReactFlow<
+  const { addNodes, screenToFlowPosition, setNodes, setEdges } = useReactFlow<
     TableNodeData,
     NodeRelationEdge
   >();
@@ -115,32 +133,47 @@ export default function DrawingHeaderBar({
     () => [...currentNodes].sort((a, b) => a.data.index - b.data.index),
     [currentNodes],
   );
+  const currentEdges = useEdges<NodeRelationEdge>();
+  const sortedEdges = useMemo(
+    () =>
+      [...currentEdges].sort(
+        (a, b) => (a.data?.index || 0) - (b.data?.index || 0),
+      ),
+    [currentEdges],
+  );
 
-  const [isEditTitle, setIsEditTitle] = useState<Boolean>(false);
+  const [isEditingTitle, setIsEditingTitle] = useState<Boolean>(false);
   const [currenTitle, setCurrentTitle] = useState<string>("");
   const titleRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const tableDragAndDropContainer = useRef<HTMLDivElement | null>(null);
-  const { setNodes } = useReactFlow<TableNodeData, NodeRelationEdge>();
+  const relationshipDragAndDropContainer = useRef<HTMLDivElement | null>(null);
 
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
+  const [tabSelected, setTabSelected] = useState<number>(0);
+
+  const [newEdgeDialogOpen, setNewEdgeDialogOpen] = useState(false);
+
   useEffect(() => {
-    setCurrentTitle(diagramInfo?.title || "");
+    setCurrentTitle(diagramInfo?.title || t("noTitle"));
   }, [diagramInfo?.title]);
 
   useEffect(() => {
-    if (isEditTitle) {
+    if (isEditingTitle) {
       titleRef.current?.focus();
     }
-  }, [isEditTitle]);
+  }, [isEditingTitle]);
 
+  const handleChangeTab = (_: React.SyntheticEvent, newValue: number) => {
+    setTabSelected(newValue);
+  };
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     signOut({ callbackUrl: getPathname({ href: "/signin", locale }) })
       .then(() => {
         enqueueSnackbar({
@@ -155,39 +188,40 @@ export default function DrawingHeaderBar({
   };
 
   const handleOpenEditTitle = () => {
-    setIsEditTitle(true);
+    setIsEditingTitle(true);
   };
   const handleChangeTitle = (
     e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => {
     setCurrentTitle(e.target.value);
   };
-  const handleCancelEditTitle = () => {
-    setCurrentTitle(diagramInfo?.title || "");
-    setIsEditTitle(false);
+  const handleDiscardEditTitle = () => {
+    setCurrentTitle(diagramInfo?.title || t("noTitle"));
+    setIsEditingTitle(false);
   };
-  const handleSubmitEditTitleByEnter = (e: KeyboardEvent<HTMLDivElement>) => {
+  const handleSubmitEditTitleByPressEnterKey = (
+    e: KeyboardEvent<HTMLDivElement>,
+  ) => {
     if (e.key === "Enter") {
-      setIsEditTitle(false);
-      submitEditTitle();
+      handleSubmitEditTitle();
     } else if (e.key === "Escape") {
-      handleCancelEditTitle();
+      handleDiscardEditTitle();
     }
   };
-  const submitEditTitle = () => {
+  const handleSubmitEditTitleByClickSubmitButton = () => {
+    handleSubmitEditTitle();
+  };
+  const handleSubmitEditTitle = () => {
     if (
       currenTitle &&
       currenTitle !== diagramInfo?.title &&
-      diagramInfo?.diagramId &&
-      updateDiagramTitle
+      diagramInfo?.diagram_oid
     ) {
-      updateDiagramTitle(diagramInfo?.diagramId, currenTitle)
-        .then(() => {
-          enqueueSnackbar({
-            variant: "success",
-            message: t("updateTitleSuccessfully"),
-          });
-        })
+      updateDiagram({
+        ...diagramInfo,
+        title: currenTitle ?? t("noTitle"),
+      })
+        .then(() => setIsEditingTitle(false))
         .catch((err) => {
           console.error("Update diagram title error", err);
           Swal.fire({ title: t("alertErrorTitle"), text: t("alertError") });
@@ -214,7 +248,7 @@ export default function DrawingHeaderBar({
         type: "tableNode",
         dragHandle: ".drag-header-handle",
         data: {
-          diagramId: diagramInfo.diagramId,
+          diagramId: diagramInfo.diagram_oid,
           index: currentNodes.length,
           color: getRandomMuiColor(),
           tableName: `${t("tableInTableName")}_${currentNodes.length}`,
@@ -225,6 +259,7 @@ export default function DrawingHeaderBar({
                 type: "int",
                 params: [],
                 inputType: "number",
+                hasIdentitySpecification: true,
               },
               isNullable: false,
               identity: {
@@ -235,9 +270,13 @@ export default function DrawingHeaderBar({
           },
           keys: {
             primaryKey: {
+              id: "primaryKey",
               keyName: `PK_${t("tableInTableName")}_${currentNodes.length}`,
-              columnIds: [{ columnId: firstColumnId, sortType: "asc" }],
+              columnsWithIdAndSortOrder: [
+                { columnId: firstColumnId, sortOrder: "asc" },
+              ],
               isUnique: true,
+              isPrimary: true,
             },
           },
         },
@@ -255,236 +294,349 @@ export default function DrawingHeaderBar({
       }, 100); // Delay nhẹ một chút để chờ React render phần tử mới vào DOM
     }
   };
+  const handleOpenAddNewRelationshipDialog = () => {
+    setNewEdgeDialogOpen(true);
+  };
+  const handleCloseAddNewRelationshipDialog = () => {
+    setNewEdgeDialogOpen(false);
+  };
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        open
-        drawerwidth={sideMenuWidth}
-        sx={{
-          backgroundImage:
-            colorScheme.mode === "light"
-              ? "linear-gradient(135deg, #b8d0de 0%, #c1c6cd 50%, #77bff1 100%)"
-              : "linear-gradient(135deg, #2e4a83 0%, #2f4975 50%, #06b6d4 100%)",
-        }}
-      >
-        <Toolbar>
-          <Box
-            sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 2 }}
-          >
-            <TextField
-              value={currenTitle}
-              placeholder={t("noTitle")}
-              onChange={handleChangeTitle}
-              onBlur={handleCancelEditTitle}
-              onKeyDown={handleSubmitEditTitleByEnter}
-              inputRef={titleRef}
-              variant="standard"
-              disabled={!isEditTitle}
-            />
-            {!isEditTitle && (
-              <IconButton
-                disabled={!diagramInfo || isDiagramLoading}
-                onClick={handleOpenEditTitle}
-                sx={{ paddingTop: "4px" }}
-              >
-                <FaEdit size="20px" />
-              </IconButton>
-            )}
-          </Box>
-          <Box
-            sx={{
-              flexGrow: 1,
-              justifyContent: "right",
-              display: "flex",
-              gap: 2,
-            }}
-          >
-            <LanguageSelector />
-            <SwitchTheme hasBackground={false} />
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                {session?.user?.image ? (
-                  <Avatar
-                    alt={session.user.name || undefined}
-                    src={session.user.image}
-                  />
-                ) : (
-                  <Avatar alt={"Avatar"}>
-                    {session?.user?.name?.[0] || session?.user?.email?.[0]}
-                  </Avatar>
-                )}
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: "45px" }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
+    <>
+      <Box sx={{ display: "flex" }}>
+        <CssBaseline />
+        <AppBar
+          position="fixed"
+          open
+          drawerwidth={sideMenuWidth}
+          sx={{
+            backgroundImage:
+              colorScheme.mode === "light"
+                ? "linear-gradient(135deg, #b8d0de 0%, #c1c6cd 50%, #77bff1 100%)"
+                : "linear-gradient(135deg, #2e4a83 0%, #2f4975 50%, #06b6d4 100%)",
+          }}
+        >
+          <Toolbar>
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
               }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
             >
-              <MenuList>
-                <MenuItem onClick={handleCloseUserMenu}>
-                  <Link
-                    href={`/profile`}
-                    style={{
-                      display: "flex",
-                      textDecoration: "none",
-                      color: "inherit",
-                      flexWrap: "nowrap",
-                      flexDirection: "row",
-                    }}
-                  >
+              <DrawingLoading />
+              <TextField
+                value={currenTitle}
+                placeholder={t("noTitle")}
+                onChange={handleChangeTitle}
+                onBlur={handleDiscardEditTitle}
+                onKeyDown={handleSubmitEditTitleByPressEnterKey}
+                inputRef={titleRef}
+                variant="standard"
+                disabled={
+                  !isEditingTitle ||
+                  !diagramInfo ||
+                  isDiagramLoading ||
+                  isDiagramSyncing
+                }
+              />
+              {!isEditingTitle ? (
+                <IconButton
+                  loading={isDiagramLoading || isDiagramSyncing}
+                  disabled={!diagramInfo}
+                  onClick={handleOpenEditTitle}
+                  sx={{ paddingTop: "4px" }}
+                >
+                  <FaEdit size="20px" />
+                </IconButton>
+              ) : (
+                <IconButton
+                  loading={isDiagramLoading || isDiagramSyncing}
+                  disabled={!diagramInfo}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleSubmitEditTitleByClickSubmitButton}
+                  sx={{ paddingTop: "4px" }}
+                >
+                  <FaCheckDouble size="20px" />
+                </IconButton>
+              )}
+            </Box>
+            <Box
+              sx={{
+                flexGrow: 1,
+                justifyContent: "right",
+                display: "flex",
+                gap: 2,
+              }}
+            >
+              <LanguageSelector />
+              <SwitchTheme hasBackground={false} />
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  {session?.user?.image ? (
+                    <Avatar
+                      alt={session.user.name || undefined}
+                      src={session.user.image}
+                    />
+                  ) : (
+                    <Avatar alt={"Avatar"}>
+                      {session?.user?.name?.[0] || session?.user?.email?.[0]}
+                    </Avatar>
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: "45px" }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+                <MenuList>
+                  <MenuItem onClick={handleCloseUserMenu}>
+                    <Link
+                      href={`/profile`}
+                      style={{
+                        display: "flex",
+                        textDecoration: "none",
+                        color: "inherit",
+                        flexWrap: "nowrap",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <ListItemIcon>
+                        <InfoIcon />
+                      </ListItemIcon>
+                      <Typography sx={{ textAlign: "center" }}>
+                        {t("profile")}
+                      </Typography>
+                    </Link>
+                  </MenuItem>
+                  <MenuItem onClick={handleCloseUserMenu}>
+                    <Link
+                      href={`/account`}
+                      style={{
+                        display: "flex",
+                        textDecoration: "none",
+                        color: "inherit",
+                        flexWrap: "nowrap",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <ListItemIcon>
+                        <VerifiedUserSharpIcon />
+                      </ListItemIcon>
+                      <Typography sx={{ textAlign: "center" }}>
+                        {t("account")}
+                      </Typography>
+                    </Link>
+                  </MenuItem>
+                  <MenuItem onClick={handleCloseUserMenu}>
+                    <Link
+                      href={`/dashboard`}
+                      style={{
+                        display: "flex",
+                        textDecoration: "none",
+                        color: "inherit",
+                        flexWrap: "nowrap",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <ListItemIcon>
+                        <DashboardSharpIcon />
+                      </ListItemIcon>
+                      <Typography sx={{ textAlign: "center" }}>
+                        {t("dashboard")}
+                      </Typography>
+                    </Link>
+                  </MenuItem>
+                  <MenuItem onClick={handleSignOut}>
                     <ListItemIcon>
-                      <InfoIcon />
+                      <LogoutIcon />
                     </ListItemIcon>
                     <Typography sx={{ textAlign: "center" }}>
-                      {t("profile")}
+                      {t("logout")}
                     </Typography>
-                  </Link>
-                </MenuItem>
-                <MenuItem onClick={handleCloseUserMenu}>
-                  <Link
-                    href={`/account`}
-                    style={{
-                      display: "flex",
-                      textDecoration: "none",
-                      color: "inherit",
-                      flexWrap: "nowrap",
-                      flexDirection: "row",
-                    }}
-                  >
-                    <ListItemIcon>
-                      <VerifiedUserSharpIcon />
-                    </ListItemIcon>
-                    <Typography sx={{ textAlign: "center" }}>
-                      {t("account")}
-                    </Typography>
-                  </Link>
-                </MenuItem>
-                <MenuItem onClick={handleCloseUserMenu}>
-                  <Link
-                    href={`/dashboard`}
-                    style={{
-                      display: "flex",
-                      textDecoration: "none",
-                      color: "inherit",
-                      flexWrap: "nowrap",
-                      flexDirection: "row",
-                    }}
-                  >
-                    <ListItemIcon>
-                      <DashboardSharpIcon />
-                    </ListItemIcon>
-                    <Typography sx={{ textAlign: "center" }}>
-                      {t("dashboard")}
-                    </Typography>
-                  </Link>
-                </MenuItem>
-                <MenuItem onClick={handleSignOut}>
-                  <ListItemIcon>
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  <Typography sx={{ textAlign: "center" }}>
-                    {t("logout")}
-                  </Typography>
-                </MenuItem>
-              </MenuList>
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        sx={{
-          width: sideMenuWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            </Box>
+          </Toolbar>
+        </AppBar>
+        <Drawer
+          sx={{
             width: sideMenuWidth,
-            boxSizing: "border-box",
-          },
-        }}
-        hideBackdrop
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundImage:
-                colorScheme.mode === "light"
-                  ? "linear-gradient(135deg, #77bff1 0%, #c1c6cd 20%, #a8e3ff 100%)"
-                  : "linear-gradient(135deg, #12899d 0%, #2f4975 20%, #2d4ca2 100%)",
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: sideMenuWidth,
+              boxSizing: "border-box",
             },
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-        open={true}
-      >
-        <DrawerHeader
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
           }}
-        >
-          <Typography variant="h6" noWrap component="div" mr={2}>
-            <AppLogo />
-          </Typography>
-          <DiagramMenu diagramId={diagramInfo?.diagramId} />
-        </DrawerHeader>
-        <Button
-          startIcon={<FaPlus size={12} />}
-          variant="contained"
-          sx={{ m: 2 }}
-          onClick={handleAddNewTable}
-        >
-          <Typography fontSize={12} fontWeight={600} component={"strong"}>
-            {t("addNewTable")}
-          </Typography>
-        </Button>
-        <Divider />
-        <List
-          component={"div"}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            height: "calc(100vh - 64px + 30px + 1px)",
-            overflowY: "auto",
-            px: "5px",
-            gap: "10px",
+          hideBackdrop
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundImage:
+                  colorScheme.mode === "light"
+                    ? "linear-gradient(135deg, #77bff1 0%, #c1c6cd 20%, #a8e3ff 100%)"
+                    : "linear-gradient(135deg, #12899d 0%, #2f4975 20%, #2d4ca2 100%)",
+              },
+            },
           }}
-          ref={tableDragAndDropContainer}
+          variant="permanent"
+          anchor="left"
+          open={true}
         >
-          <DragDropProvider
-            onDragEnd={(e) => {
-              setNodes((nodes: TableNodeData[]) => {
-                return move(nodes, e);
-              });
+          <DrawerHeader
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
             }}
           >
-            {sortedNodes.map(({ selected, data, id }, index) => (
-              <TableListItem
-                key={id}
-                id={id}
-                index={index}
-                color={data.color}
-                tableName={data.tableName}
-                columns={data.columns}
-                selected={selected}
-              />
-            ))}
-          </DragDropProvider>
-        </List>
-      </Drawer>
-    </Box>
+            <Typography variant="h6" noWrap component="div">
+              <AppLogo />
+            </Typography>
+            <Box p={0}>
+              <Tabs
+                value={tabSelected}
+                onChange={handleChangeTab}
+                aria-label="type tabs table or relationship"
+              >
+                <Tab
+                  label={t("table")}
+                  {...a11yProps(0)}
+                  sx={{
+                    borderTopLeftRadius: "5px",
+                  }}
+                />
+                <Tab
+                  label={t("relationship")}
+                  {...a11yProps(1)}
+                  sx={{
+                    borderTopRightRadius: "5px",
+                  }}
+                />
+              </Tabs>
+            </Box>
+            <DiagramMenu diagramId={diagramInfo?.diagram_oid} />
+          </DrawerHeader>
+          <CustomTabPanel index={0} value={tabSelected} px={1} py={1}>
+            <Button
+              startIcon={<FaPlus size={12} />}
+              variant="contained"
+              onClick={handleAddNewTable}
+              fullWidth
+            >
+              <Typography fontSize={12} fontWeight={600} component={"strong"}>
+                {t("addNewTable")}
+              </Typography>
+            </Button>
+            <Divider sx={{ mt: 2, mb: 1 }} />
+            <List
+              component={"div"}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                height:
+                  "calc(100vh - (64px + 8px + 30px + 16px + 8px + 1px + 8px))",
+                overflowY: "auto",
+                gap: "10px",
+              }}
+              ref={tableDragAndDropContainer}
+            >
+              <DragDropProvider
+                onDragEnd={(e) => {
+                  setNodes((nodes: TableNodeData[]) => {
+                    return move(nodes, e);
+                  });
+                }}
+              >
+                {sortedNodes.map(({ selected, data, id }, index) => (
+                  <TableListItem
+                    key={id}
+                    id={id}
+                    index={index}
+                    color={data.color}
+                    tableName={data.tableName}
+                    columns={data.columns}
+                    selected={selected}
+                  />
+                ))}
+              </DragDropProvider>
+            </List>
+          </CustomTabPanel>
+          <CustomTabPanel index={1} value={tabSelected} px={1} py={1}>
+            <Button
+              startIcon={<FaPlus size={12} />}
+              variant="contained"
+              onClick={handleOpenAddNewRelationshipDialog}
+              fullWidth
+              color="success"
+            >
+              <Typography fontSize={12} fontWeight={600} component={"strong"}>
+                {t("addNewRelationship")}
+              </Typography>
+            </Button>
+            <Divider sx={{ mt: 2, mb: 1 }} />
+            <List
+              component={"div"}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                height:
+                  "calc(100vh - (64px + 8px + 30px + 16px + 8px + 1px + 8px))",
+                overflowY: "auto",
+                gap: "10px",
+                pt: 3,
+              }}
+              ref={relationshipDragAndDropContainer}
+            >
+              <DragDropProvider
+                onDragEnd={(e) => {
+                  setEdges((edges: NodeRelationEdge[]) => {
+                    return move(edges, e);
+                  });
+                }}
+              >
+                <Box display={"flex"} flexDirection={"column"} gap={4}>
+                  {sortedEdges.map(
+                    ({ selected, data, id, source, target }, index) => (
+                      <RelationListItem
+                        key={id}
+                        id={id}
+                        index={index}
+                        data={data}
+                        selected={selected}
+                        sourceId={source}
+                        targetId={target}
+                      />
+                    ),
+                  )}
+                </Box>
+              </DragDropProvider>
+            </List>
+          </CustomTabPanel>
+        </Drawer>
+      </Box>
+      {diagramInfo?.diagram_oid && (
+        <NewEdgeDialog
+          open={newEdgeDialogOpen}
+          handleClose={handleCloseAddNewRelationshipDialog}
+          diagramId={diagramInfo.diagram_oid}
+        />
+      )}
+    </>
   );
 }

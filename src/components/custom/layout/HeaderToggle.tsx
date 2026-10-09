@@ -31,7 +31,7 @@ const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
   ],
 }));
 
-export const drawingHeaderBaseWidth = 430;
+export const drawingHeaderBaseWidth = 450;
 
 export default function HeaderToggle({
   locale,

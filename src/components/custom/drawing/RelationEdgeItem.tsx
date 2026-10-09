@@ -1,18 +1,18 @@
 import {
   ColumnProps,
+  KeyWithColumnProp,
   NodeRelationEdge,
-  REFERENTIAL_ACTIONS,
-  RELATIONSHIP_TYPES,
-  ReferentialAction,
-  RelationshipType,
+  SortOrder,
   TableNodeData,
   marchingAntsBorderStyle,
-} from "@/src/types/model/TableNode";
+} from "@/src/types/model/ExtendedNodeEdge";
+import { syncTableNameToRelationship } from "@/src/utils/client";
 import {
   AccountTreeRounded,
   DeleteRounded,
   AutoAwesome,
   ClearRounded,
+  NearMe,
 } from "@mui/icons-material";
 import {
   Box,
@@ -58,35 +58,13 @@ import {
   useMemo,
   useState,
 } from "react";
-
-type KeyWithColumnProp = {
-  id: string;
-  keyName?: string;
-  isPrimary?: boolean;
-  isUnique?: boolean;
-  columns?: [string, ColumnProps][];
-};
-
-const syncTableNameToRelationship = (
-  edgeId: string,
-  sourceTableName: string,
-  targetTableName: string,
-  getEdges: () => NodeRelationEdge[],
-) => {
-  let loopIndex = 0;
-  let pattern = `FK_${sourceTableName}_${targetTableName}_`;
-  let newRelationshipName = `${pattern}${loopIndex}`;
-  while (
-    getEdges().find(
-      (e) =>
-        e.id !== edgeId && e.data?.relationshipName === newRelationshipName,
-    )
-  ) {
-    loopIndex++;
-    newRelationshipName = `${pattern}${loopIndex}`;
-  }
-  return newRelationshipName;
-};
+import { useScrollTargets } from "../../provider/ScrollTargetProvider";
+import {
+  REFERENTIAL_ACTIONS,
+  ReferentialAction,
+  RELATIONSHIP_TYPES,
+  RelationshipType,
+} from "@/src/constants/sqlProviders";
 
 const RelationEdgeItem = ({
   id,
@@ -102,37 +80,54 @@ const RelationEdgeItem = ({
   selected,
 }: EdgeProps<NodeRelationEdge>): ReactElement => {
   const t = useTranslations("Drawing");
-  const { deleteElements, setEdges, getEdges } = useReactFlow<
+  const { deleteElements, setEdges, getEdges, getEdge } = useReactFlow<
     TableNodeData,
     NodeRelationEdge
   >();
   const buttonId = `${id}-edge-button`;
   const menuId = `${id}-edge-menu`;
   const theme = useTheme();
+  const menuIconColor = useMemo(() => {
+    return data?.color ? theme.palette.getContrastText(data.color) : undefined;
+  }, [data?.color]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const sourceNode = useNodesData<TableNodeData>(source);
   const targetNode = useNodesData<TableNodeData>(target);
-  const targetPrimaryOrUniqueList = useMemo<KeyWithColumnProp[]>(() => {
+  const targetKeyList = useMemo<KeyWithColumnProp[]>(() => {
     let returnList: KeyWithColumnProp[] = [];
     if (targetNode?.data) {
-      const columns = Object.entries<ColumnProps>(
-        targetNode.data.columns as Record<string, ColumnProps>,
-      );
-      const { primaryKey, otherKeys } = targetNode.data.keys;
-      const primaryKeyColumns: [string, ColumnProps][] = columns.filter((c) =>
-        primaryKey.columnIds.some((k) => k.columnId === c[0]),
-      );
-      if (primaryKey.columnIds.length) {
-        returnList.push({
-          id: "primaryKey",
-          keyName: primaryKey.keyName,
-          isUnique: true,
-          isPrimary: true,
-          columns: primaryKeyColumns,
-        });
+      const columns = Object.entries<ColumnProps>(targetNode.data.columns);
+      const tableKeys = targetNode.data.keys;
+      if (tableKeys?.primaryKey) {
+        const primaryKey = tableKeys.primaryKey;
+        const primaryKeyColumns: [
+          string,
+          ColumnProps & { sortOrder: SortOrder },
+        ][] = columns
+          .filter((c) =>
+            primaryKey.columnsWithIdAndSortOrder.some(
+              (k) => k.columnId === c[0],
+            ),
+          )
+          .map((c) => {
+            const columnSortType = primaryKey.columnsWithIdAndSortOrder.find(
+              (ci) => ci.columnId === c[0],
+            )?.sortOrder;
+            return [c[0], { ...c[1], sortOrder: columnSortType || "asc" }];
+          });
+        if (primaryKey.columnsWithIdAndSortOrder.length) {
+          returnList.push({
+            id: "primaryKey",
+            keyName: primaryKey.keyName,
+            isUnique: true,
+            isPrimary: true,
+            columns: primaryKeyColumns,
+          });
+        }
       }
-      if (otherKeys) {
+      if (tableKeys?.otherKeys) {
+        const otherKeys = tableKeys.otherKeys;
         Object.entries(otherKeys)
           .filter((k) => k[1].isUnique)
           .forEach((k) => {
@@ -141,22 +136,17 @@ const RelationEdgeItem = ({
               keyName: k[1].keyName,
               isUnique: true,
               isPrimary: false,
-              columns: k[1].columnIds
-                .map((c) => {
-                  return columns.find((col) => c.columnId === col[0]);
-                })
-                .filter((res) => !!res),
+              columns: k[1].columnsWithIdAndSortOrder.map((ci) => [
+                ci.columnId,
+                targetNode.data.columns[ci.columnId],
+              ]),
             });
           });
       }
     }
     return returnList;
   }, [targetNode?.data]);
-  const [sourceSelectedColumns, setSourceSelectedColumns] = useState<
-    [string, ColumnProps?][]
-  >([]);
-  const [targetSelectedPrimaryOrUnique, setTargetSelectedPrimaryOrUnique] =
-    useState<KeyWithColumnProp>({ id: "" });
+  const { scrollTo } = useScrollTargets();
 
   const handleClickOpenMenu = (event: MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -210,7 +200,9 @@ const RelationEdgeItem = ({
       });
     });
   };
-  const handleChangeReferentialAction = (newAction: ReferentialAction) => {
+  const handleChangeReferentialActionForUpdate = (
+    newAction: ReferentialAction,
+  ) => {
     setEdges((edges) => {
       return edges.map((edge: NodeRelationEdge) => {
         if (edge.id !== id) return edge;
@@ -219,7 +211,25 @@ const RelationEdgeItem = ({
           data: edge.data
             ? {
                 ...edge.data,
-                referentialAction: newAction,
+                referentialActionForUpdate: newAction,
+              }
+            : undefined,
+        };
+      });
+    });
+  };
+  const handleChangeReferentialActionForDelete = (
+    newAction: ReferentialAction,
+  ) => {
+    setEdges((edges) => {
+      return edges.map((edge: NodeRelationEdge) => {
+        if (edge.id !== id) return edge;
+        return {
+          ...edge,
+          data: edge.data
+            ? {
+                ...edge.data,
+                referentialActionForDelete: newAction,
               }
             : undefined,
         };
@@ -276,18 +286,25 @@ const RelationEdgeItem = ({
     newColumnId: string,
     columnIndex: number,
   ) => {
-    setSourceSelectedColumns((state) =>
-      state.map((o, i) => {
-        if (i !== columnIndex) return o;
-        const foundColumn = sourceNode?.data.columns[newColumnId];
-        if (foundColumn) {
-          return [newColumnId, foundColumn];
-        }
-        return o;
-      }),
-    );
+    setEdges((edges) => {
+      return edges.map((edge: NodeRelationEdge) => {
+        if (edge.id !== id || !edge.data) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            sourceColumns: edge.data.sourceColumns.map((c, i) => {
+              if (i !== columnIndex) return c;
+              const foundSourceColumn = sourceNode?.data.columns[newColumnId];
+              if (!foundSourceColumn) return c;
+              return [newColumnId, foundSourceColumn];
+            }),
+          },
+        };
+      });
+    });
   };
-  const handleChangeTargetSelectedPrimaryOrUnique = (
+  const handleChangeTargetSelectedKey = (
     e:
       | ChangeEvent<
           Omit<HTMLInputElement, "value"> & {
@@ -301,25 +318,45 @@ const RelationEdgeItem = ({
           };
         }),
   ) => {
-    setTargetSelectedPrimaryOrUnique(
-      targetPrimaryOrUniqueList.find((k) => k.id === e.target.value) || {
-        id: "",
-      },
-    );
+    const foundKey = targetKeyList.find((k) => k.id === e.target.value);
+    setEdges((edges) => {
+      return edges.map((edge: NodeRelationEdge) => {
+        if (edge.id !== id || !edge.data || !foundKey?.columns) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            targetSelectedKey: foundKey,
+            sourceColumns: foundKey.columns.map(() => [""]),
+          },
+        };
+      });
+    });
+  };
+  const handleClearTargetSelectedKey = () => {
+    setEdges((edges) => {
+      return edges.map((edge: NodeRelationEdge) => {
+        if (edge.id !== id || !edge.data) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            targetSelectedKey: {
+              id: "",
+            },
+            sourceColumns: [],
+          },
+        };
+      });
+    });
+  };
+  const handleFocusEdgeInList = () => {
+    const edge = getEdge(id);
+    if (!edge) return;
+
+    scrollTo!(id);
   };
 
-  useEffect(() => {
-    if (targetSelectedPrimaryOrUnique.id) {
-      const { columns } = targetSelectedPrimaryOrUnique;
-      if (columns) {
-        setSourceSelectedColumns(
-          columns.map((c, i) => [`${c}_${i}`, undefined]),
-        );
-      }
-    } else {
-      setSourceSelectedColumns([]);
-    }
-  }, [targetSelectedPrimaryOrUnique, targetSelectedPrimaryOrUnique.id]);
   useEffect(() => {
     if (sourceNode?.data.tableName && targetNode?.data.tableName) {
       const newRelationshipName = syncTableNameToRelationship(
@@ -343,6 +380,25 @@ const RelationEdgeItem = ({
       });
     }
   }, [sourceNode?.data.tableName, targetNode?.data.tableName]);
+  useEffect(() => {
+    if (sourceNode?.data.columns && data?.sourceColumns) {
+      setEdges((edges) => {
+        return edges.map((edge: NodeRelationEdge) => {
+          if (edge.id !== id || !edge.data) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              sourceColumns: data.sourceColumns.map((sc) => {
+                if (sc[0] === "") return sc;
+                return [sc[0], sourceNode.data.columns[sc[0]]];
+              }),
+            },
+          };
+        });
+      });
+    }
+  }, [sourceNode?.data.columns]);
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -359,21 +415,14 @@ const RelationEdgeItem = ({
       <BaseEdge
         id={id}
         path={edgePath}
-        style={
-          selected
-            ? { opacity: 0 } // ẩn hoàn toàn đường mặc định khi được chọn, nhường chỗ cho overlay marching ants
-            : undefined
-        }
+        style={{ opacity: selected ? 0 : undefined, stroke: data?.color }}
       />
-      {/* Overlay path riêng cho hiệu ứng marching ants, chỉ hiện khi được chọn.
-          Dùng Box (component="path") thay vì truyền style vào BaseEdge, vì sx đi qua
-          Emotion nên @keyframes thực sự được đăng ký và chạy được. */}
       {selected && (
         <Box
           component="path"
           d={edgePath}
           fill="none"
-          stroke={theme.palette.primary.main}
+          stroke={data?.color}
           strokeWidth={2}
           strokeDasharray="10 6"
           sx={{
@@ -389,6 +438,8 @@ const RelationEdgeItem = ({
           onClick={handleChangeSourceRelationshipType}
           id={`relationship-type-${id}-source`}
           sx={{
+            bgcolor: data?.color,
+            color: menuIconColor,
             pointerEvents: "all",
             maxWidth: "35px",
             minWidth: "35px",
@@ -406,6 +457,8 @@ const RelationEdgeItem = ({
           onClick={handleChangeTargetRelationshipType}
           id={`relationship-type-${id}-target`}
           sx={{
+            bgcolor: data?.color,
+            color: menuIconColor,
             pointerEvents: "all",
             maxWidth: "35px",
             minWidth: "35px",
@@ -427,12 +480,18 @@ const RelationEdgeItem = ({
               position: "absolute",
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               pointerEvents: "all",
-              bgcolor: "background.paper",
+              bgcolor: data?.color,
               boxShadow: 1,
-              "&:hover": { bgcolor: "info.light" },
+              "&:hover": {
+                bgcolor: data?.color
+                  ? menuIconColor === "#fff"
+                    ? theme.lighten(data.color, 0.3)
+                    : theme.darken(data.color, 0.3)
+                  : undefined,
+              },
             }}
           >
-            <AccountTreeRounded fontSize="small" color="action" />
+            <AccountTreeRounded fontSize="small" htmlColor={menuIconColor} />
           </IconButton>
         </Tooltip>
         <Menu
@@ -468,6 +527,14 @@ const RelationEdgeItem = ({
             gap={1}
             mb={1}
           >
+            <IconButton
+              color="primary"
+              sx={{ width: "50px", height: "50px" }}
+              centerRipple
+              onClick={handleFocusEdgeInList}
+            >
+              <NearMe />
+            </IconButton>
             <FormControl>
               <InputLabel id={`${id}-select-type-label`}>
                 {t("selectType")}
@@ -525,20 +592,26 @@ const RelationEdgeItem = ({
           </Box>
           <Grid container spacing={1}>
             <Grid size={12}>
-              <Divider>{t("referentialAction")}</Divider>
+              <Divider>
+                <Typography fontSize={14} fontStyle={"italic"}>
+                  {t("referentialAction")}
+                </Typography>
+              </Divider>
             </Grid>
             <Grid size={6}>
               <FormControl fullWidth>
-                <InputLabel id={`${id}-select-referential-action-label`}>
+                <InputLabel
+                  id={`${id}-select-referential-action-label-for-update`}
+                >
                   {t("forUpdate")}
                 </InputLabel>
                 <Select
                   label={t("forUpdate")}
-                  labelId={`${id}-select-referential-action-label`}
-                  value={data?.referentialAction}
-                  id={`${id}-select-referential-action-input`}
+                  labelId={`${id}-select-referential-action-label-for-update`}
+                  value={data?.referentialActionForUpdate}
+                  id={`${id}-select-referential-action-input-for-update`}
                   onChange={(e) =>
-                    handleChangeReferentialAction(e.target.value)
+                    handleChangeReferentialActionForUpdate(e.target.value)
                   }
                   size="small"
                 >
@@ -554,22 +627,24 @@ const RelationEdgeItem = ({
             </Grid>
             <Grid size={6}>
               <FormControl fullWidth>
-                <InputLabel id={`${id}-select-referential-action-label`}>
+                <InputLabel
+                  id={`${id}-select-referential-action-label-for-delete`}
+                >
                   {t("forDelete")}
                 </InputLabel>
                 <Select
                   label={t("forDelete")}
-                  labelId={`${id}-select-referential-action-label`}
-                  value={data?.referentialAction}
-                  id={`${id}-select-referential-action-input`}
+                  labelId={`${id}-select-referential-action-label-for-delete`}
+                  value={data?.referentialActionForDelete}
+                  id={`${id}-select-referential-action-input-for-delete`}
                   onChange={(e) =>
-                    handleChangeReferentialAction(e.target.value)
+                    handleChangeReferentialActionForDelete(e.target.value)
                   }
                   size="small"
                 >
                   {REFERENTIAL_ACTIONS.map((a) => (
                     <MenuItem value={a}>
-                      <Tooltip title={t(`${a}Tooltip`)} placement="left">
+                      <Tooltip title={t(`${a}Tooltip`)} placement="right">
                         <Typography>{t(a)}</Typography>
                       </Tooltip>
                     </MenuItem>
@@ -578,7 +653,11 @@ const RelationEdgeItem = ({
               </FormControl>
             </Grid>
             <Grid size={12}>
-              <Divider>{t("tableColumnsSpecification")}</Divider>
+              <Divider>
+                <Typography fontSize={14} fontStyle={"italic"}>
+                  {t("tableColumnsSpecification")}
+                </Typography>
+              </Divider>
             </Grid>
             <Grid size={6}>
               <Typography
@@ -598,24 +677,20 @@ const RelationEdgeItem = ({
                 <Select
                   label={`${t("primaryKeyOnReferenceTable")} ${targetNode?.data.tableName}`}
                   labelId={`${id}-select-target-columns-label`}
-                  value={targetSelectedPrimaryOrUnique.id}
-                  id={`${id}-select-type-input`}
-                  onChange={handleChangeTargetSelectedPrimaryOrUnique}
+                  value={data?.targetSelectedKey.id || ""}
+                  id={`${id}-select-reference-input`}
+                  onChange={handleChangeTargetSelectedKey}
                 >
-                  {targetPrimaryOrUniqueList.map((k) => (
+                  {targetKeyList.map((k) => (
                     <MenuItem key={k.id} value={k.id}>
                       {k.keyName}
                     </MenuItem>
                   ))}
                 </Select>
-                {targetSelectedPrimaryOrUnique.id !== "" && (
+                {data?.targetSelectedKey.id && (
                   <IconButton
                     size="small"
-                    onClick={() =>
-                      setTargetSelectedPrimaryOrUnique({
-                        id: "",
-                      })
-                    }
+                    onClick={handleClearTargetSelectedKey}
                     sx={{
                       position: "absolute",
                       right: "30px",
@@ -634,49 +709,75 @@ const RelationEdgeItem = ({
                   <TableHead>
                     <TableRow>
                       <TableCell>{t("columnName")}</TableCell>
-                      <TableCell width={180}>{t("dataType")}</TableCell>
+                      <TableCell>{t("dataType")}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sourceSelectedColumns.map((sc, i) => (
+                    {data?.sourceColumns.map((sc, i) => (
                       <TableRow key={sc[0]}>
-                        <TableCell padding="none">
-                          <Select
-                            id={`${id}-columns-relation-selector`}
-                            fullWidth
-                            size="small"
-                            value={sc[0]}
-                            onChange={(e) =>
-                              handleChangeSourceSelectedColumns(
-                                e.target.value,
-                                i,
-                              )
-                            }
-                            slotProps={{
-                              notchedOutline: {
-                                sx: {
-                                  border: "none",
-                                },
-                              },
-                            }}
+                        <TableCell
+                          padding="none"
+                          sx={{ maxWidth: "150px", minWidth: "150px" }}
+                        >
+                          <Tooltip
+                            title={sourceNode?.data.columns[sc[0]]?.columnName}
                           >
-                            {sourceNode?.data.columns &&
-                              Object.entries(sourceNode?.data.columns).map(
-                                (c) => (
-                                  <MenuItem value={c[0]}>
-                                    {c[1].columnName}
-                                  </MenuItem>
-                                ),
-                              )}
-                          </Select>
+                            <Select
+                              id={`${id}-columns-relation-selector`}
+                              fullWidth
+                              size="small"
+                              value={sc[0]}
+                              onChange={(e) =>
+                                handleChangeSourceSelectedColumns(
+                                  e.target.value,
+                                  i,
+                                )
+                              }
+                              slotProps={{
+                                notchedOutline: {
+                                  sx: {
+                                    border: "none",
+                                  },
+                                },
+                              }}
+                            >
+                              {sourceNode?.data.columns &&
+                                Object.entries(sourceNode?.data.columns).map(
+                                  (c) => (
+                                    <MenuItem key={c[0]} value={c[0]}>
+                                      {c[1].columnName}
+                                    </MenuItem>
+                                  ),
+                                )}
+                            </Select>
+                          </Tooltip>
                         </TableCell>
                         <TableCell
-                          sx={{ px: "14px", py: "8.5px", fontSize: "16px" }}
+                          sx={{
+                            px: "14px",
+                            py: "8.5px",
+                            fontSize: "16px",
+                            maxWidth: "130px",
+                            minWidth: "130px",
+                            overflowX: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
                         >
-                          {sc[1]?.dataType.type}
-                          {sc[1]?.dataType.params.length
-                            ? `(${sc[1].dataType.params.join(",")})`
-                            : ""}
+                          <Tooltip
+                            title={`${sc[1]?.dataType.type}
+                              ${
+                                sc[1]?.dataType.params.length
+                                  ? `(${sc[1].dataType.params.join(",")})`
+                                  : ""
+                              }`}
+                          >
+                            <Typography component={"span"}>
+                              {sc[1]?.dataType.type}
+                              {sc[1]?.dataType.params.length
+                                ? `(${sc[1].dataType.params.join(",")})`
+                                : ""}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -690,24 +791,53 @@ const RelationEdgeItem = ({
                   <TableHead>
                     <TableRow>
                       <TableCell>{t("columnName")}</TableCell>
-                      <TableCell width={180}>{t("dataType")}</TableCell>
+                      <TableCell>{t("dataType")}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {targetSelectedPrimaryOrUnique.columns?.map((c) => (
+                    {data?.targetSelectedKey.columns?.map((c) => (
                       <TableRow key={c[0]}>
                         <TableCell
-                          sx={{ px: "14px", py: "8.5px", fontSize: "16px" }}
+                          sx={{
+                            px: "14px",
+                            py: "8.5px",
+                            fontSize: "16px",
+                            maxWidth: "150px",
+                            minWidth: "150px",
+                          }}
                         >
-                          {c[1].columnName}
+                          <Tooltip title={c[1].columnName}>
+                            <Typography component={"span"}>
+                              {c[1].columnName}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                         <TableCell
-                          sx={{ px: "14px", py: "8.5px", fontSize: "16px" }}
+                          sx={{
+                            px: "14px",
+                            py: "8.5px",
+                            fontSize: "16px",
+                            maxWidth: "130px",
+                            minWidth: "130px",
+                            overflowX: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
                         >
-                          {c[1].dataType.type}
-                          {c[1].dataType.params.length
-                            ? `(${c[1].dataType.params.join(",")})`
-                            : ""}
+                          <Tooltip
+                            title={`${c[1].dataType.type}
+                              ${
+                                c[1].dataType.params.length
+                                  ? `(${c[1].dataType.params.join(",")})`
+                                  : ""
+                              }`}
+                          >
+                            <Typography component={"span"}>
+                              {c[1].dataType.type}
+                              {c[1].dataType.params.length
+                                ? `(${c[1].dataType.params.join(",")})`
+                                : ""}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}

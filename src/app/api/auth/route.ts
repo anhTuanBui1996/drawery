@@ -1,12 +1,12 @@
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/src/i18n/routing";
-import { DiagramInfo } from "@/src/types/model/DiagramData";
-import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
+import { DiagramDTO } from "@/src/types/model/DiagramData";
+import { DiagramDocument } from "@/src/types/data/DiagramDocument";
 
 export async function POST(req: NextRequest) {
   const locale = req.headers.get("accept-language") || routing.defaultLocale;
@@ -44,14 +44,18 @@ export async function POST(req: NextRequest) {
       .collection("users")
       .findOne({ _id: diagram.ownerId }, { projection: { name: 1, image: 1 } });
 
-    const responseData: DiagramInfo = {
+    const responseData: DiagramDTO = {
       isOwned: isOwner,
       isPrivate: diagram.isPrivate,
       createdAt: diagram.createdAt,
-      lastUpdatedAt: diagram.updatedAt,
-      diagramId: diagram._id.toString(),
+      updatedAt: diagram.updatedAt,
+      diagram_oid: diagram._id.toString(),
       title: diagram.title,
-      providerName: diagram.provider
+      providerName: diagram.provider,
+      owner_oid: diagram.ownerId.toString(),
+      shares: diagram.shares.map((s) => s.toString()),
+      ownerAvatar: owner?.image || null,
+      ownerName: owner?.name || null,
     };
 
     if (!isOwner && owner) {

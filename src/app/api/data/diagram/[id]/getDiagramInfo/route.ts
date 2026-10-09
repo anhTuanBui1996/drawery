@@ -1,9 +1,9 @@
 import { routing } from "@/src/i18n/routing";
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
-import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
-import { DiagramInfo } from "@/src/types/model/DiagramData";
-import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
+import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import { DiagramDTO } from "@/src/types/model/DiagramData";
+import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -46,21 +46,23 @@ export async function GET(
       .collection<ExtendedAdapterUser>("users")
       .findOne({ _id: diagram.ownerId });
 
-    let diagramInfo: DiagramInfo = {
+    let diagramInfo: DiagramDTO = {
       createdAt: diagram.createdAt,
-      diagramId: diagram._id.toString(),
+      diagram_oid: diagram._id.toString(),
       isOwned: isOwner,
       isPrivate: diagram.isPrivate,
-      lastUpdatedAt: diagram.updatedAt,
+      updatedAt: diagram.updatedAt,
       ownerAvatar: owner?.image,
       ownerName: owner?.name,
       title: diagram.title,
       providerName: diagram.provider,
+      owner_oid: diagram.ownerId.toString(),
+      shares: diagram.shares.map((shareId) => shareId.toString()),
     };
 
     return NextResponse.json({ success: true, diagramInfo });
   } catch (err) {
-    console.error("GET /api/data/diagram/[id]/getDiagramInfo error:", err);
+    console.error(`GET /api/data/diagram/${id}/getDiagramDTO error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

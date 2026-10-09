@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import adapter from "@/src/lib/adapter";
-import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
+import adapter from "@/src/lib/mongodbAdapter";
+import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
 import { compare, hash } from "bcrypt";
 import { getTranslations } from "next-intl/server";
-import { authOptions } from "@/src/lib/auth";
-import ChangePasswordDTO from "@/src/types/data/UserTransfer";
+import { authOptions } from "@/src/lib/nextauth";
+import ChangePasswordDTO from "@/src/types/model/AuthenticationData";
 import { routing } from "@/src/i18n/routing";
 
 export async function POST(req: NextRequest) {

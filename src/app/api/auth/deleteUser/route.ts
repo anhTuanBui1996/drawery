@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcrypt";
-import client from "@/src/lib/db";
+import client from "@/src/lib/mongodb";
 import { Account, getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
-import adapter from "@/src/lib/adapter";
-import { authOptions } from "@/src/lib/auth";
+import adapter from "@/src/lib/mongodbAdapter";
+import { authOptions } from "@/src/lib/nextauth";
 import { routing } from "@/src/i18n/routing";
-import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
-import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
+import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import { NodeRelationEdge, TableNodeData } from "@/src/types/model/ExtendedNodeEdge";
 import { ObjectId } from "mongodb";
 
 export async function DELETE(req: NextRequest) {

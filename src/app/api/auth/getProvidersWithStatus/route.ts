@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import client from "@/src/lib/db";
-import { authOptions } from "@/src/lib/auth";
+import client from "@/src/lib/mongodb";
+import { authOptions } from "@/src/lib/nextauth";
 import { getTranslations } from "next-intl/server";
 import { routing } from "@/src/i18n/routing";
 

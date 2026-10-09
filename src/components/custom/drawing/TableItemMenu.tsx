@@ -1,15 +1,15 @@
-import { NodeRelationEdge, TableNodeData } from "@/src/types/model/TableNode";
 import {
-  Box,
+  NodeRelationEdge,
+  TableNodeData,
+} from "@/src/types/model/ExtendedNodeEdge";
+import {
   Grid,
   IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
-  MenuList,
-  Paper,
-  Select,
+  Tooltip,
 } from "@mui/material";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslations } from "next-intl";
@@ -17,8 +17,9 @@ import { MouseEvent, RefObject, useId, useMemo, useState } from "react";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ColorLensIcon from "@mui/icons-material/ColorLens";
-import { getMuiColor, HUES } from "@/src/utils/client";
-import { Check } from "@mui/icons-material";
+import { getMuiColor, getRandomMuiColor, HUES } from "@/src/utils/client";
+import { Check, Shuffle } from "@mui/icons-material";
+import { useScrollTargets } from "../../provider/ScrollTargetProvider";
 
 export default function TableItemMenu({
   tableId,
@@ -26,14 +27,14 @@ export default function TableItemMenu({
   anchorEl,
   handleClose,
   isNodeItem,
-  tableRef,
+  tableLisItemRef,
 }: {
   tableId: string;
   open: boolean;
   anchorEl: HTMLElement | null;
   handleClose: () => void;
   isNodeItem?: boolean;
-  tableRef?: RefObject<HTMLDivElement | null>;
+  tableLisItemRef?: RefObject<HTMLDivElement | null>;
 }) {
   const id = useId();
   const t = useTranslations("Drawing");
@@ -41,6 +42,7 @@ export default function TableItemMenu({
     TableNodeData,
     NodeRelationEdge
   >();
+  const { scrollTo } = useScrollTargets();
   const [colorMenuAnchorEl, setColorMenuAnchorEl] =
     useState<null | HTMLLIElement>(null);
   const colorMenuOpen = Boolean(colorMenuAnchorEl);
@@ -57,6 +59,13 @@ export default function TableItemMenu({
     const y = node.position.y + (node.measured?.height ?? 0) / 2;
 
     setCenter(x, y, { zoom: 1, duration: 500 }); // duration: có animation mượt
+    handleClose();
+  };
+  const handleFocusTableInList = () => {
+    const node = getNode(tableId);
+    if (!node) return;
+
+    scrollTo!(tableId);
     handleClose();
   };
   const handleOpenTableColorMenu = (
@@ -84,24 +93,25 @@ export default function TableItemMenu({
     handleCloseTableColorMenu();
   };
   const handleDeleteTable = () => {
-    if (tableRef?.current) {
-      const parentContainer = tableRef.current.parentElement;
+    if (tableLisItemRef?.current) {
+      handleClose();
+      const parentContainer = tableLisItemRef.current.parentElement;
       // Lấy khoảng gap của flex container (ví dụ: "16px" -> 16)
       const computedGap = parentContainer
         ? parseInt(window.getComputedStyle(parentContainer).gap || "0", 10)
         : 0;
-      tableRef.current.style.overflow = "hidden";
-      tableRef.current.style.height = `${tableRef.current.offsetHeight}px`; // Cố định height hiện tại trước khi animate về 0
+      tableLisItemRef.current.style.overflow = "hidden";
+      tableLisItemRef.current.style.height = `${tableLisItemRef.current.offsetHeight}px`; // Cố định height hiện tại trước khi animate về 0
 
       // Ép trình duyệt nhận giá trị hiện tại trước khi chuyển về 0
-      tableRef.current.offsetHeight;
+      tableLisItemRef.current.offsetHeight;
 
-      tableRef.current.style.height = "0px";
-      tableRef.current.style.paddingTop = "0px";
-      tableRef.current.style.paddingBottom = "0px";
-      tableRef.current.style.marginTop = `-${computedGap / 2}px`;
-      tableRef.current.style.marginBottom = `-${computedGap / 2}px`;
-      tableRef.current.style.opacity = "0";
+      tableLisItemRef.current.style.height = "0px";
+      tableLisItemRef.current.style.paddingTop = "0px";
+      tableLisItemRef.current.style.paddingBottom = "0px";
+      tableLisItemRef.current.style.marginTop = `-${computedGap / 2}px`;
+      tableLisItemRef.current.style.marginBottom = `-${computedGap / 2}px`;
+      tableLisItemRef.current.style.opacity = "0";
     }
     setTimeout(() => {
       setNodes((nds) => nds.filter((node) => node.id !== tableId));
@@ -121,7 +131,9 @@ export default function TableItemMenu({
           },
         }}
       >
-        <MenuItem onClick={handleFocusTableInFlow}>
+        <MenuItem
+          onClick={isNodeItem ? handleFocusTableInList : handleFocusTableInFlow}
+        >
           <ListItemIcon>
             <CenterFocusStrongIcon />
           </ListItemIcon>
@@ -159,7 +171,7 @@ export default function TableItemMenu({
             <Grid
               key={c}
               sx={{ backgroundColor: getMuiColor(c, 500) }}
-              size={2}
+              size={3}
             >
               <IconButton
                 sx={{
@@ -176,6 +188,23 @@ export default function TableItemMenu({
               </IconButton>
             </Grid>
           ))}
+          <Grid size={3}>
+            <Tooltip title={t("randomColor")}>
+              <IconButton
+                sx={{
+                  justifyContent: "center",
+                  borderRadius: 0,
+                  width: "100%",
+                  height: "36px",
+                }}
+                onClick={() =>
+                  handleChangeTableTagColor(getRandomMuiColor(500))
+                }
+              >
+                <Shuffle fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Grid>
         </Grid>
       </Menu>
     </>

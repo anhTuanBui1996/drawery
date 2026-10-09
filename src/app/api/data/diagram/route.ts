@@ -1,8 +1,8 @@
 import { routing } from "@/src/i18n/routing";
-import { authOptions } from "@/src/lib/auth";
-import client from "@/src/lib/db";
-import { DiagramDocument } from "@/src/types/data/DiagramTransfer";
-import { DiagramInfo } from "@/src/types/model/DiagramData";
+import { authOptions } from "@/src/lib/nextauth";
+import client from "@/src/lib/mongodb";
+import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import { DiagramDTO, NewDiagramDTO } from "@/src/types/model/DiagramData";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -24,16 +24,18 @@ export async function GET(req: NextRequest) {
       .find({ ownerId: new ObjectId(session.user.id) })
       .toArray();
 
-    const diagrams: DiagramInfo[] = rawDiagrams.map((doc) => {
+    const diagrams: DiagramDTO[] = rawDiagrams.map((doc) => {
       const isOwner = doc.ownerId.toString() === session.user.id;
-      let res: DiagramInfo = {
+      let res: DiagramDTO = {
         isOwned: isOwner,
         isPrivate: doc.isPrivate,
         createdAt: doc.createdAt,
-        lastUpdatedAt: doc.updatedAt,
-        diagramId: doc._id.toHexString(),
+        updatedAt: doc.updatedAt,
+        diagram_oid: doc._id.toString(),
         title: doc.title ?? undefined,
-        providerName: doc.provider
+        providerName: doc.provider,
+        owner_oid: doc.ownerId.toString(),
+        shares: doc.shares.map((shareId) => shareId.toString()),
       };
       if (isOwner) {
         res.ownerAvatar = session.user.image;
@@ -44,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, diagrams });
   } catch (err) {
-    console.error("GET /api/data/getMyDiagrams error:", err);
+    console.error("GET /api/data/diagram error:", err);
     return NextResponse.json({ error: err }, { status: 500 });
   }
 }
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, isPrivate } = await req.json();
+    const { title, isPrivate } = (await req.json()) as NewDiagramDTO;
     const db = client.db(process.env.MONGODB_DATA_DB_NAME);
 
     const newDiagram = await db.collection("diagrams").insertOne({
@@ -66,7 +68,6 @@ export async function POST(req: NextRequest) {
       title,
       ownerId: new ObjectId(session.user.id),
       isPrivate,
-      data: null,
     });
 
     return NextResponse.json({
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       newDiagramId: newDiagram.insertedId.toString(),
     });
   } catch (err) {
-    console.error("POST /api/data/getMyDiagrams error:", err);
+    console.error("POST /api/data/diagram error:", err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

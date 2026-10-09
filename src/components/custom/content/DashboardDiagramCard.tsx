@@ -31,7 +31,7 @@ export default function DashboardDiagramCard({
   isOwned: boolean;
   ownerAvatar?: string | null;
   ownerName?: string | null;
-  createdAt: Date;
+  createdAt?: Date;
   lastUpdatedAt?: Date;
   diagramId: string;
   type: "erd" | "dfd";
@@ -113,7 +113,7 @@ export default function DashboardDiagramCard({
         }
         title={
           isOwned
-            ? `${t("createdAt")} ${createdAt.toLocaleString(locale)}`
+            ? `${t("createdAt")} ${createdAt ? new Date(createdAt).toLocaleString(locale) : new Date()}`
             : ownerName
         }
         subheader={
@@ -121,7 +121,7 @@ export default function DashboardDiagramCard({
             ? lastUpdatedAt
               ? `${t("lastUpdatedAt")} ${new Date(lastUpdatedAt).toLocaleString(locale)}`
               : ""
-            : `${t("createdAt")} ${createdAt.toLocaleString(locale)}`
+            : `${t("createdAt")} ${createdAt ? new Date(createdAt).toLocaleString(locale) : new Date()}`
         }
       />
       <CardActionArea onClick={handleAccessDrawingPageWithDiagramId}>

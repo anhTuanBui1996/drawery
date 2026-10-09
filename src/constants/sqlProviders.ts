@@ -1,65 +1,9 @@
-import { keyframes } from "@emotion/react";
-import { Edge, Node } from "@xyflow/react";
-import { SQLProvider } from "../data/DiagramTransfer";
-import { PickerValue } from "@mui/x-date-pickers/internals";
-import { ObjectId } from "mongodb";
+export type SQLProviderName = "SQLServer" | "MySQL" | "PostgreeSQL";
 
-export interface ColumnProps {
-  columnName: string;
-  isNullable?: boolean;
-  dataType: ColumnDataType;
-  identity?: {
-    seed: number;
-    increment: number;
-  };
-  defaultValue?: number | string | PickerValue;
-  description?: string;
+export interface SQLProvider {
+  provider: SQLProviderName;
+  dataTypeList: ColumnDataType[];
 }
-
-export type TableKey = {
-  keyName: string;
-  isPrimary: boolean;
-  isUnique: boolean;
-  columnIds: { columnId: string; sortType: "asc" | "desc" }[];
-};
-
-export type PrimaryKey = Omit<TableKey, "isPrimary" | "isUnique"> & {
-  isUnique: true;
-};
-
-export type OtherKey = Omit<TableKey, "isPrimary">;
-
-export type TableKeys = {
-  primaryKey: PrimaryKey;
-  otherKeys?: Record<string, OtherKey>;
-};
-
-export type TableNodeData = Node<
-  {
-    _id?: ObjectId;
-    diagramId: string;
-    index: number;
-    color: string;
-    tableName: string;
-    columns: Record<string, ColumnProps>; // <columnId, ColumnProps>
-    keys: TableKeys;
-  },
-  "tableNode"
->;
-
-export type NodeRelationEdge = Edge<
-  {
-    _id?: ObjectId;
-    diagramId: string;
-    relationType: RelationshipType;
-    relationshipName: string;
-    isAutoNaming: boolean;
-    referentialAction: ReferentialAction;
-    sourceColumns: string[];
-    targetColumns: string[];
-  },
-  "foreignKeyEdge"
->;
 
 export const SQLProviders: SQLProvider[] = [
   {
@@ -302,7 +246,7 @@ export interface ColumnDataType {
   hasIdentitySpecification?: boolean;
 }
 
-export const RELATIONSHIP_TYPES = ["1 - N", "N - 1", "1 - 1", "N - N"];
+export const RELATIONSHIP_TYPES = ["1 - N", "N - 1", "1 - 1", "N - N"] as const;
 
 export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number];
 
@@ -311,15 +255,6 @@ export const REFERENTIAL_ACTIONS = [
   "cascade",
   "setNull",
   "setDefault",
-];
+] as const;
 
 export type ReferentialAction = (typeof REFERENTIAL_ACTIONS)[number];
-
-/**
- * Style marching ants for selecting node (current = -16)
- */
-export const marchingAntsBorderStyle = keyframes`
-  to {
-    stroke-dashoffset: -16;
-  }
-`;

@@ -6,8 +6,10 @@ import {
   marchingAntsBorderStyle,
   NodeRelationEdge,
   TableNodeData,
-} from "@/src/types/model/TableNode";
+} from "@/src/types/model/ExtendedNodeEdge";
 import {
+  ArrowDropDown,
+  ArrowDropUp,
   DragIndicator,
   ExpandLess,
   ExpandMore,
@@ -31,6 +33,7 @@ import {
   ChangeEvent,
   KeyboardEvent,
   memo,
+  MouseEvent,
   ReactElement,
   useMemo,
   useRef,
@@ -38,8 +41,8 @@ import {
 } from "react";
 import { useScrollTargets } from "../../provider/ScrollTargetProvider";
 import ColumnItem from "./ColumnItem";
-import { DragDropProvider } from "@dnd-kit/react";
 import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
+import TableItemMenu from "./TableItemMenu";
 
 const TableNodeItem = ({
   id,
@@ -60,12 +63,32 @@ const TableNodeItem = ({
   }>({ isInvalid: false });
   const tableNameEditor = useRef<HTMLInputElement | null>(null);
 
+  const [tableMenuState, setTableMenuState] = useState<{
+    open: boolean;
+    anchorEl: HTMLButtonElement | null;
+  }>({
+    open: false,
+    anchorEl: null,
+  });
+
   const { setNodes, getNode, getNodes } = useReactFlow<
     TableNodeData,
     NodeRelationEdge
   >();
   const { scrollTo } = useScrollTargets();
 
+  const handleClickListItem = () => {
+    setNodes((nodes) => {
+      const target = nodes.find((n) => n.id === id);
+      if (!target) return nodes;
+
+      const rest = nodes.filter((n) => n.id !== id);
+      return [
+        ...rest.map((n) => ({ ...n, selected: false })),
+        { ...target, selected: true },
+      ];
+    });
+  };
   const handleClickToggleCollapseColumns = () => {
     setShowColumns(!isShowColumns);
   };
@@ -166,6 +189,23 @@ const TableNodeItem = ({
 
     scrollTo!(id);
   };
+  const handleOpenTableMenu = (
+    e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>,
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setTableMenuState({
+      open: true,
+      anchorEl: e.currentTarget,
+    });
+    handleClickListItem();
+  };
+  const handleCloseTableMenu = () => {
+    setTableMenuState({
+      open: false,
+      anchorEl: null,
+    });
+  };
 
   return (
     <Paper
@@ -265,21 +305,18 @@ const TableNodeItem = ({
           unmountOnExit
           sx={{
             position: "relative",
-            paddingBottom: "3px",
             zIndex: 0,
           }}
         >
-          <DragDropProvider>
-            {Object.entries(data.columns).map(([columnId, columnProps], i) => (
-              <ColumnItem
-                key={columnId}
-                index={i}
-                tableId={id}
-                columnId={columnId}
-                columnProps={columnProps}
-              />
-            ))}
-          </DragDropProvider>
+          {Object.entries(data.columns).map(([columnId, columnProps], i) => (
+            <ColumnItem
+              key={columnId}
+              index={i}
+              tableId={id}
+              columnId={columnId}
+              columnProps={columnProps}
+            />
+          ))}
         </Collapse>
         {selected && (
           <Box
@@ -297,7 +334,7 @@ const TableNodeItem = ({
             <Box
               component="rect"
               width="calc(100% - 2px)"
-              height="calc(100% - 2px)"
+              height="calc(100% - 1px)"
               x={1}
               y={1}
               rx={5}
@@ -331,9 +368,17 @@ const TableNodeItem = ({
           zIndex: 0,
         }}
         onDoubleClick={handleFocusTableListItem}
+        onContextMenu={handleOpenTableMenu}
       >
         <DragIndicator htmlColor={dragIconColor} fontSize="small" />
       </IconButton>
+      <TableItemMenu
+        open={tableMenuState.open}
+        anchorEl={tableMenuState.anchorEl}
+        tableId={id}
+        handleClose={handleCloseTableMenu}
+        isNodeItem
+      />
       <Handle
         position={Position.Top}
         id={"target-top"}
@@ -353,13 +398,12 @@ const TableNodeItem = ({
             backgroundColor: "light",
           }}
         >
-          <ArrowCircleRightIcon
+          <ArrowDropDown
             style={{
               pointerEvents: "none",
               fontSize: "1em",
               left: 0,
               position: "absolute",
-              transform: "rotate(90deg)",
             }}
           />
         </Paper>
@@ -383,13 +427,12 @@ const TableNodeItem = ({
             backgroundColor: "light",
           }}
         >
-          <ArrowCircleRightIcon
+          <ArrowDropDown
             style={{
               pointerEvents: "none",
               fontSize: "1em",
               left: 0,
               position: "absolute",
-              transform: "rotate(90deg)",
             }}
           />
         </Paper>
@@ -413,12 +456,13 @@ const TableNodeItem = ({
             backgroundColor: "light",
           }}
         >
-          <ArrowCircleRightIcon
+          <ArrowDropUp
             style={{
               pointerEvents: "none",
               fontSize: "1em",
               left: 0,
               position: "absolute",
+              transform: "rotate(90deg)",
             }}
           />
         </Paper>
@@ -442,12 +486,13 @@ const TableNodeItem = ({
             backgroundColor: "light",
           }}
         >
-          <ArrowCircleRightIcon
+          <ArrowDropUp
             style={{
               pointerEvents: "none",
               fontSize: "1em",
               left: 0,
               position: "absolute",
+              transform: "rotate(90deg)",
             }}
           />
         </Paper>

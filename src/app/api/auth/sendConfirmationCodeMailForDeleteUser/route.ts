@@ -1,8 +1,8 @@
-import { authOptions, sendUserDeletionConfirmCode } from "@/src/lib/auth";
+import { authOptions, sendUserDeletionConfirmCode } from "@/src/lib/nextauth";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import adapter from "@/src/lib/adapter";
-import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
+import adapter from "@/src/lib/mongodbAdapter";
+import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
 import { randomInt } from "@/src/utils/server";
 import { routing } from "@/src/i18n/routing";
 import { getTranslations } from "next-intl/server";

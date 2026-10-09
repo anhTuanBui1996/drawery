@@ -1,10 +1,8 @@
 import {
-  Autocomplete,
   IconButton,
   ListItemIcon,
   Menu,
   MenuItem,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
@@ -42,21 +40,9 @@ export default function DiagramMenu({ diagramId }: { diagramId?: string }) {
           list: {
             "aria-labelledby": diagramId,
           },
-          paper: {
-            sx: {
-              px: 1,
-            },
-          },
         }}
       >
-        <Autocomplete
-          options={[]}
-          sx={{ width: 300 }}
-          renderInput={(params) => (
-            <TextField {...params} label={t("search")} />
-          )}
-        />
-        <MenuItem sx={{ marginTop: 1 }} onClick={handleDeleteDiagram}>
+        <MenuItem onClick={handleDeleteDiagram}>
           <ListItemIcon>
             <FaShare />
           </ListItemIcon>

@@ -1,4 +1,4 @@
-import ERD from "./ui";
+import Canvas from "./ui";
 
 export default async function Page({
   params,
@@ -6,5 +6,5 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <ERD id={id} />;
+  return <Canvas id={id} />;
 }

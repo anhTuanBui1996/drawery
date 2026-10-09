@@ -23,7 +23,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ChangeEvent, JSX, MouseEvent, useState } from "react";
 import Swal from "sweetalert2";
 import { useLoaderDispatch } from "../../provider/LoaderProvider";
-import ChangePasswordDTO from "@/src/types/data/UserTransfer";
+import ChangePasswordDTO from "@/src/types/model/AuthenticationData";
 
 export default function ButtonChangePassword({
   buttonContent,

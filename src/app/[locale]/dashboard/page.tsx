@@ -19,10 +19,9 @@ import { FaCheckDouble, FaPlus } from "react-icons/fa";
 import { useLocale, useTranslations } from "next-intl";
 import { MouseEvent, useEffect, useId, useState } from "react";
 import Swal from "sweetalert2";
-import { NewDiagram } from "@/src/types/data/DiagramTransfer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "@/src/i18n/navigation";
-import { DiagramInfo } from "@/src/types/model/DiagramData";
+import { NewDiagramDTO, DiagramDTO } from "@/src/types/model/DiagramData";
 import { useSnackbar } from "notistack";
 import { AddBox } from "@mui/icons-material";
 
@@ -36,9 +35,9 @@ export default function Dashboard() {
   const t = useTranslations("Dashboard");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  const [myDiagrams, setMyDiagrams] = useState<null | DiagramInfo[]>(null);
+  const [myDiagrams, setMyDiagrams] = useState<null | DiagramDTO[]>(null);
   const [sharedWithMeDiagrams, setSharedWithMeDiagrams] = useState<
-    null | DiagramInfo[]
+    null | DiagramDTO[]
   >(null);
   const { enqueueSnackbar } = useSnackbar();
 
@@ -46,26 +45,16 @@ export default function Dashboard() {
     fetch("/api/data/diagram", { headers: { "accept-language": locale } })
       .then((res) => res.json())
       .then(
-        ({
-          success,
-          diagrams,
-        }: {
-          success: boolean;
-          diagrams: DiagramInfo[];
-        }) => success && setMyDiagrams(diagrams),
+        ({ success, diagrams }: { success: boolean; diagrams: DiagramDTO[] }) =>
+          success && setMyDiagrams(diagrams),
       );
     fetch("/api/data/diagram/shareWithMe", {
       headers: { "accept-language": locale },
     })
       .then((res) => res.json())
       .then(
-        ({
-          success,
-          diagrams,
-        }: {
-          success: boolean;
-          diagrams: DiagramInfo[];
-        }) => success && setSharedWithMeDiagrams(diagrams),
+        ({ success, diagrams }: { success: boolean; diagrams: DiagramDTO[] }) =>
+          success && setSharedWithMeDiagrams(diagrams),
       )
       .catch((err) => {
         console.error(err);
@@ -91,7 +80,7 @@ export default function Dashboard() {
       return;
     }
 
-    const newDiagram: NewDiagram = {
+    const newDiagram: NewDiagramDTO = {
       createdAt: new Date(),
       isPrivate: true,
     };
@@ -190,13 +179,16 @@ export default function Dashboard() {
           {myDiagrams ? (
             myDiagrams.length ? (
               myDiagrams.map((d) => (
-                <Grid size={{ xl: 3, lg: 4, md: 6, sm: 12 }} key={d.diagramId}>
+                <Grid
+                  size={{ xl: 3, lg: 4, md: 6, sm: 12 }}
+                  key={d.diagram_oid}
+                >
                   <DashboardDiagramCard
                     isOwned
                     type="erd"
-                    diagramId={d.diagramId}
-                    createdAt={new Date(d.createdAt)}
-                    lastUpdatedAt={d.lastUpdatedAt}
+                    diagramId={d.diagram_oid}
+                    createdAt={d.createdAt}
+                    lastUpdatedAt={d.updatedAt}
                     ownerAvatar={d.ownerAvatar}
                     ownerName={d.ownerName}
                     title={d.title}

@@ -49,7 +49,7 @@ export default function SignIn({
   > | null;
 }) {
   const searchParams = useSearchParams();
-  const callback = searchParams.get("callback");
+  const callback = searchParams.get("callbackUrl");
   const router = useRouter();
   const session = useSession();
   const t = useTranslations("SignIn");

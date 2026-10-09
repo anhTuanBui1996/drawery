@@ -22,8 +22,13 @@
     "noTitle": "Không có tiêu đề",
     "updateTitleSuccessfully": "Cập nhật tiêu đề thành công!",
     "addNewTable": "Thêm bảng mới",
+    "addNewRelationship": "Thêm mối liên kết mới",
     "tableInTableName": "Bang",
-    "columnInColumnName": "Cot"
+    "columnInColumnName": "Cot",
+    "table": "Bảng",
+    "relationship": "Liên kết",
+    "done": "Hoàn tất!",
+    "syncing": "Đang đồng bộ..."
   },
   "LanguageSelector": {
     "title": "Chọn ngôn ngữ"
@@ -402,6 +407,7 @@
     "shareDiagram": "Chia sẻ lược đồ",
     "removeDiagram": "Xóa lược đồ",
     "changeColor": "Đổi màu",
+    "randomColor": "Chọn màu tự động",
     "deleteColumn": "Xóa cột",
     "foreignKeyEdgeName": "Tên khóa ngoại",
     "selectType": "Chọn kiểu",
@@ -418,11 +424,17 @@
     "setDefaultTooltip": "Đặt các giá trị ở khóa ngoại liên quan về giá trị mặc định",
     "tableColumnsSpecification": "Đặc tả các bảng và cột",
     "autoNamingRelationshipName": "Tự đặt tên mối liên kết",
-    "foreignKeyOnSelectedTable": "Khóa ngoại của bảng",
-    "primaryKeyOnReferenceTable": "Khóa chính / Chỉ mục duy nhất của bảng",
-    "sortType": "Kiểu sắp xếp",
+    "foreignKeyOnSelectedTable": "Khóa ngoại của",
+    "primaryKeyOnReferenceTable": "Khóa chính / Chỉ mục duy nhất của",
+    "sortOrder": "Kiểu sắp xếp",
     "asc": "tăng dần",
     "desc": "giảm dần",
-    "index": "Thứ tự"
+    "index": "Thứ tự",
+    "addNewRelationship": "Thêm mối liên kết mới",
+    "tableWithForeignKey": "Bảng chứa khóa ngoại",
+    "tableForReference": "Bảng được dùng tham chiếu",
+    "add": "Thêm mới",
+    "cancel": "Hủy",
+    "diagramDeletedAndRedirectToDashboard": "Lược đồ đã bị xóa và bạn sẽ được chuyển đến trang chủ..."
   }
 }

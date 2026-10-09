@@ -3,7 +3,6 @@
 import { Link } from "@/src/i18n/navigation";
 import { Box, Typography } from "@mui/material";
 import { useColorScheme } from "@mui/material/styles";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
 import React from "react";
 

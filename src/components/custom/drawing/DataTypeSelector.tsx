@@ -1,10 +1,8 @@
 import { getDataTypeList } from "@/src/utils/client";
-import { SQLProviderName } from "@/src/types/data/DiagramTransfer";
 import {
-  ColumnDataType,
   NodeRelationEdge,
   TableNodeData,
-} from "@/src/types/model/TableNode";
+} from "@/src/types/model/ExtendedNodeEdge";
 import {
   Box,
   Button,
@@ -18,6 +16,7 @@ import {
 import { useReactFlow } from "@xyflow/react";
 import { useTranslations } from "next-intl";
 import { ChangeEvent, MouseEvent, useId, useState } from "react";
+import { ColumnDataType, SQLProviderName } from "@/src/constants/sqlProviders";
 
 export default function DataTypeSelector({
   tableId,
@@ -173,6 +172,12 @@ export default function DataTypeSelector({
           paper: {
             sx: {
               padding: "10px",
+            },
+          },
+          list: {
+            sx: {
+              display: "flex",
+              flexWrap: "nowrap",
             },
           },
         }}

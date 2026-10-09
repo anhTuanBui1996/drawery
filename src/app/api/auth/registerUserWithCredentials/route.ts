@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import client from "@/src/lib/db";
-import { ExtendedAdapterUser } from "@/src/types/model/ExtendedAdapterUser";
+import client from "@/src/lib/mongodb";
+import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
 import { ObjectId } from "mongodb";
 import { getTranslations } from "next-intl/server";
-import adapter from "@/src/lib/adapter";
+import adapter from "@/src/lib/mongodbAdapter";
 import { routing } from "@/src/i18n/routing";
 
 export async function POST(req: Request) {
