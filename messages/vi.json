@@ -364,7 +364,8 @@
     "selectMany": "Chọn nhiều",
     "noSessionFound": "Không tìm thấy phiên làm việc",
     "unauthorized": "Không được phép truy cập",
-    "noDiagramsAddNew": "Chưa có lược đồ nào, tạo mới"
+    "noDiagramsAddNew": "Chưa có lược đồ nào, tạo mới",
+    "noTitle":"Không có tiêu đề"
   },
   "DashboardCard": {
     "shareDiagram": "Chia sẻ lược đồ",

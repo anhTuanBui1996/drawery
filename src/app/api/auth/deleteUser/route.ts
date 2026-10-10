@@ -6,9 +6,7 @@ import { getTranslations } from "next-intl/server";
 import adapter from "@/src/lib/mongodbAdapter";
 import { authOptions } from "@/src/lib/nextauth";
 import { routing } from "@/src/i18n/routing";
-import { DiagramDocument } from "@/src/types/data/DiagramDocument";
-import { NodeRelationEdge, TableNodeData } from "@/src/types/model/ExtendedNodeEdge";
-import { ObjectId } from "mongodb";
+import supabaseAdmin from "@/src/lib/supabase/admin";
 
 export async function DELETE(req: NextRequest) {
   const locale = req.headers.get("accept-language") || routing.defaultLocale;
@@ -40,37 +38,19 @@ export async function DELETE(req: NextRequest) {
           { status: 400 },
         );
       } else {
-        // Xóa danh sách diagram của user
-        const listDiagram = await client
-          .db(process.env.MONGODB_DATA_DB_NAME)
-          .collection<DiagramDocument>("diagrams")
-          .find({ ownerId: foundUser._id })
-          .toArray();
-        let failDeleteDiagramIds: ObjectId[] = [];
-        listDiagram.forEach(async ({ _id }) => {
-          // Xóa danh sách node và edge của diagram
-          await client
-            .db(process.env.MONGODB_DATA_DB_NAME)
-            .collection<NodeRelationEdge>("edges")
-            .deleteMany({ data: { diagramId: _id } });
-          await client
-            .db(process.env.MONGODB_DATA_DB_NAME)
-            .collection<TableNodeData>("nodes")
-            .deleteMany({ data: { diagramId: _id } });
-          // Xóa diagram
-          const deleteDiagramResult = await client
-            .db(process.env.MONGODB_DATA_DB_NAME)
-            .collection<DiagramDocument>("diagrams")
-            .deleteOne({ _id });
-          if (deleteDiagramResult.deletedCount !== 1) {
-            failDeleteDiagramIds.push(_id);
-          }
-        });
-        if (failDeleteDiagramIds.length) {
-          return NextResponse.json({
-            error: t("deleteDiagramFail"),
-            failDeleteDiagramIds,
-          });
+        // Xóa diagram của user (node và edge bị xóa theo nhờ on delete cascade)
+        const { error: deleteDiagramError } =
+          await supabaseAdmin
+            .from("diagrams")
+            .delete()
+            .eq("owner_id", foundUser._id.toString())
+            .select("id");
+        if (deleteDiagramError) {
+          console.error("DELETE /api/auth/deleteUser error:", deleteDiagramError);
+          return NextResponse.json(
+            { error: t("deleteDiagramFail") },
+            { status: 500 },
+          );
         }
 
         // Xóa danh sách account

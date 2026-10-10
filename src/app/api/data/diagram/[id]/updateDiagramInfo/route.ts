@@ -1,8 +1,8 @@
 import { routing } from "@/src/i18n/routing";
 import { authOptions } from "@/src/lib/nextauth";
-import client from "@/src/lib/mongodb";
-import { DiagramDocument } from "@/src/types/data/DiagramDocument";
-import { ObjectId } from "mongodb";
+import supabaseAdmin from "@/src/lib/supabase/admin";
+import { DiagramRow } from "@/src/types/data/DiagramRow";
+import { isUuid } from "@/src/utils/server";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,17 +18,18 @@ type RequestBody = {
 };
 
 type DiagramChanges = Partial<
-  Pick<DiagramDocument, "title" | "provider" | "isPrivate" | "shares">
+  Pick<DiagramRow, "title" | "provider" | "is_private" | "shares">
 >;
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_SHARES = 100;
-const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+// Shares are user ids, and users still live in MongoDB (ObjectId)
+const USER_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
 
-const sameIds = (a: ObjectId[], b: ObjectId[]) => {
+const sameIds = (a: string[], b: string[]) => {
   if (a.length !== b.length) return false;
-  const set = new Set(b.map((x) => x.toString()));
-  return a.every((x) => set.has(x.toString()));
+  const set = new Set(b);
+  return a.every((x) => set.has(x));
 };
 
 export async function PATCH(
@@ -45,7 +46,7 @@ export async function PATCH(
       return NextResponse.json({ error: t("unauthorized") }, { status: 401 });
     }
 
-    if (!id || !ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ error: t("invalidId") }, { status: 400 });
     }
 
@@ -87,7 +88,7 @@ export async function PATCH(
 
     if ("isPrivate" in input) {
       if (typeof input.isPrivate !== "boolean") return badRequest();
-      requested.isPrivate = input.isPrivate;
+      requested.is_private = input.isPrivate;
     }
 
     if ("shares" in input) {
@@ -95,36 +96,35 @@ export async function PATCH(
       if (
         !Array.isArray(raw) ||
         raw.length > MAX_SHARES ||
-        !raw.every((x) => typeof x === "string" && OBJECT_ID_PATTERN.test(x))
+        !raw.every((x) => typeof x === "string" && USER_ID_PATTERN.test(x))
       ) {
         return badRequest();
       }
-      requested.shares = [...new Set<string>(raw)].map((x) => new ObjectId(x));
+      requested.shares = [...new Set<string>(raw)];
     }
 
     if (Object.keys(requested).length === 0) return badRequest();
 
     // 2. Load the diagram and check access
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
-    const diagramCol = db.collection<DiagramDocument>("diagrams");
-    const diagramObjectId = new ObjectId(id);
+    const { data: diagram, error: findError } = await supabaseAdmin
+      .from("diagrams")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle<DiagramRow>();
+    if (findError) throw findError;
 
-    const diagram = await diagramCol.findOne({ _id: diagramObjectId });
     if (!diagram) {
       return NextResponse.json({ error: t("notFound") }, { status: 404 });
     }
 
-    const isOwner = diagram.ownerId.toString() === session.user.id;
-    if (diagram.isPrivate && !isOwner) {
+    const isOwner = diagram.owner_id === session.user.id;
+    if (diagram.is_private && !isOwner) {
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
     // 3. Keep only what actually differs, so no-op saves don't trigger realtime events
     const changes: DiagramChanges = {};
-    if (
-      requested.title !== undefined &&
-      requested.title !== (diagram.title ?? null)
-    ) {
+    if (requested.title !== undefined && requested.title !== diagram.title) {
       changes.title = requested.title;
     }
     if (
@@ -134,30 +134,31 @@ export async function PATCH(
       changes.provider = requested.provider;
     }
     if (
-      requested.isPrivate !== undefined &&
-      requested.isPrivate !== diagram.isPrivate
+      requested.is_private !== undefined &&
+      requested.is_private !== diagram.is_private
     ) {
-      changes.isPrivate = requested.isPrivate;
+      changes.is_private = requested.is_private;
     }
     if (requested.shares !== undefined) {
       // The owner always has access, so never list them as a share
-      const shares = requested.shares.filter((x) => !x.equals(diagram.ownerId));
+      const shares = requested.shares.filter((x) => x !== diagram.owner_id);
       if (!sameIds(shares, diagram.shares ?? [])) changes.shares = shares;
     }
 
     // 4. Access-control fields can only be changed by the owner
     if (
-      (changes.isPrivate !== undefined || changes.shares !== undefined) &&
+      (changes.is_private !== undefined || changes.shares !== undefined) &&
       !isOwner
     ) {
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
     if (Object.keys(changes).length > 0) {
-      await diagramCol.updateOne(
-        { _id: diagramObjectId },
-        { $set: { ...changes, updatedAt: new Date() } },
-      );
+      const { error: updateError } = await supabaseAdmin
+        .from("diagrams")
+        .update({ ...changes, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (updateError) throw updateError;
     }
 
     return NextResponse.json({ success: true });

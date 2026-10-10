@@ -1,7 +1,6 @@
-import { ObjectId } from "mongodb";
 import { routing } from "../i18n/routing";
-import { EdgeDocument, NodeDocument } from "../types/data/DiagramDocument";
-import { EdgeDTO, NodeDTO } from "../types/model/DiagramData";
+import { DiagramRow, EdgeRow, NodeRow } from "../types/data/DiagramRow";
+import { DiagramDTO, EdgeDTO, NodeDTO } from "../types/model/DiagramData";
 
 /**
  * Extracts the locale segment from a URL pathname, falling back to the default locale.
@@ -53,39 +52,94 @@ export function randomInt(max: number): number {
 }
 
 //#region DTO conversion
-export function toNodeDTO(node: NodeDocument): NodeDTO {
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const isUuid = (value: unknown): value is string =>
+  typeof value === "string" && UUID_PATTERN.test(value);
+
+const toDate = (value: string | null) => (value ? new Date(value) : undefined);
+
+export function toDiagramDTO(row: DiagramRow): DiagramDTO {
   return {
-    ...node,
-    diagram_oid: node.diagramId.toString(),
-    node_oid: node._id.toString(),
+    diagram_oid: row.id,
+    createdAt: toDate(row.created_at),
+    updatedAt: toDate(row.updated_at),
+    isPrivate: row.is_private,
+    owner_oid: row.owner_id,
+    providerName: row.provider,
+    title: row.title,
+    shares: row.shares ?? [],
   };
 }
 
-export function toEdgeDTO(edge: EdgeDocument): EdgeDTO {
+export function toNodeDTO(row: NodeRow): NodeDTO {
   return {
-    ...edge,
-    diagram_oid: edge.diagramId.toString(),
-    edge_oid: edge._id.toString(),
+    id: row.flow_id,
+    node_oid: row.id,
+    diagram_oid: row.diagram_id,
+    createdAt: toDate(row.created_at),
+    updatedAt: toDate(row.updated_at),
+    position: row.position,
+    index: row.index,
+    data: row.data,
   };
 }
 
-export function toNodeDocument(node: NodeDTO): NodeDocument {
-  const { diagram_oid, node_oid, ...rest } = node;
+export function toEdgeDTO(row: EdgeRow): EdgeDTO {
   return {
-    ...rest,
-    _id: node.node_oid ? new ObjectId(node.node_oid) : new ObjectId(),
-    diagramId: new ObjectId(node.diagram_oid),
-    createdAt: node.createdAt || new Date(),
+    id: row.flow_id,
+    edge_oid: row.id,
+    diagram_oid: row.diagram_id,
+    createdAt: toDate(row.created_at),
+    updatedAt: toDate(row.updated_at),
+    source: row.source,
+    sourceHandle: row.source_handle,
+    target: row.target,
+    targetHandle: row.target_handle,
+    index: row.index,
+    color: row.color,
+    relationType: row.relation_type,
+    relationshipName: row.relationship_name,
+    isAutoNaming: row.is_auto_naming,
+    referentialActionForUpdate: row.referential_action_for_update,
+    referentialActionForDelete: row.referential_action_for_delete,
+    targetSelectedPrimaryOrUniqueId: row.target_selected_primary_or_unique_id,
+    sourceColumnIds: row.source_column_ids ?? [],
   };
 }
 
-export function toEdgeDocument(edge: EdgeDTO): EdgeDocument {
-  const { diagram_oid, edge_oid, ...rest } = edge;
+// Nodes/edges are identified by (diagram_id, flow_id), the id the flow uses on the client.
+// `id` is left out so an upsert keeps the existing row id (default only on insert).
+export function toNodeRow(node: NodeDTO, diagramId: string) {
   return {
-    ...rest,
-    _id: edge.edge_oid ? new ObjectId(edge.edge_oid) : new ObjectId(),
-    diagramId: new ObjectId(edge.diagram_oid),
-    createdAt: edge.createdAt || new Date(),
+    diagram_id: diagramId,
+    flow_id: node.id,
+    position: node.position,
+    index: node.index,
+    data: node.data,
+    updated_at: new Date().toISOString(),
   };
 }
-//#endregion;
+
+export function toEdgeRow(edge: EdgeDTO, diagramId: string) {
+  return {
+    diagram_id: diagramId,
+    flow_id: edge.id,
+    source: edge.source,
+    source_handle: edge.sourceHandle ?? null,
+    target: edge.target,
+    target_handle: edge.targetHandle ?? null,
+    index: edge.index,
+    color: edge.color,
+    relation_type: edge.relationType,
+    relationship_name: edge.relationshipName,
+    is_auto_naming: edge.isAutoNaming,
+    referential_action_for_update: edge.referentialActionForUpdate,
+    referential_action_for_delete: edge.referentialActionForDelete,
+    target_selected_primary_or_unique_id: edge.targetSelectedPrimaryOrUniqueId,
+    source_column_ids: edge.sourceColumnIds,
+    updated_at: new Date().toISOString(),
+  };
+}
+//#endregion

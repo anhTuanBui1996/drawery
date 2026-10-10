@@ -1,9 +1,9 @@
 import { routing } from "@/src/i18n/routing";
 import { authOptions } from "@/src/lib/nextauth";
-import client from "@/src/lib/mongodb";
-import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import supabaseAdmin from "@/src/lib/supabase/admin";
+import { DiagramRow } from "@/src/types/data/DiagramRow";
 import { DiagramDTO, NewDiagramDTO } from "@/src/types/model/DiagramData";
-import { ObjectId } from "mongodb";
+import { toDiagramDTO } from "@/src/utils/server";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,32 +17,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: t("unauthorized") }, { status: 401 });
     }
 
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
+    const { data, error } = await supabaseAdmin
+      .from("diagrams")
+      .select("*")
+      .eq("owner_id", session.user.id)
+      .returns<DiagramRow[]>();
+    if (error) throw error;
 
-    const rawDiagrams = await db
-      .collection<DiagramDocument>("diagrams")
-      .find({ ownerId: new ObjectId(session.user.id) })
-      .toArray();
-
-    const diagrams: DiagramDTO[] = rawDiagrams.map((doc) => {
-      const isOwner = doc.ownerId.toString() === session.user.id;
-      let res: DiagramDTO = {
-        isOwned: isOwner,
-        isPrivate: doc.isPrivate,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-        diagram_oid: doc._id.toString(),
-        title: doc.title ?? undefined,
-        providerName: doc.provider,
-        owner_oid: doc.ownerId.toString(),
-        shares: doc.shares.map((shareId) => shareId.toString()),
-      };
-      if (isOwner) {
-        res.ownerAvatar = session.user.image;
-        res.ownerName = session.user.name;
-      }
-      return res;
-    });
+    const diagrams: DiagramDTO[] = data.map((row) => ({
+      ...toDiagramDTO(row),
+      isOwned: true,
+      ownerAvatar: session.user.image,
+      ownerName: session.user.name,
+    }));
 
     return NextResponse.json({ success: true, diagrams });
   } catch (err) {
@@ -61,19 +48,19 @@ export async function POST(req: NextRequest) {
     }
 
     const { title, isPrivate } = (await req.json()) as NewDiagramDTO;
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
 
-    const newDiagram = await db.collection("diagrams").insertOne({
-      createdAt: new Date(),
-      title,
-      ownerId: new ObjectId(session.user.id),
-      isPrivate,
-    });
+    const { data, error } = await supabaseAdmin
+      .from("diagrams")
+      .insert({
+        title: title || t("noTitle"),
+        owner_id: session.user.id,
+        is_private: isPrivate,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
 
-    return NextResponse.json({
-      success: true,
-      newDiagramId: newDiagram.insertedId.toString(),
-    });
+    return NextResponse.json({ success: true, newDiagramId: data.id });
   } catch (err) {
     console.error("POST /api/data/diagram error:", err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });

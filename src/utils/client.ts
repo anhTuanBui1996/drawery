@@ -1,15 +1,10 @@
 import {
-  DiagramDocument,
-  EdgeDocument,
-  NodeDocument,
-} from "../types/data/DiagramDocument";
-import {
   KeyWithColumnProp,
   NodeRelationEdge,
   TableNodeData,
 } from "../types/model/ExtendedNodeEdge";
 import * as muiColors from "@mui/material/colors";
-import { DiagramDTO, EdgeDTO, NodeDTO } from "../types/model/DiagramData";
+import { EdgeDTO, NodeDTO } from "../types/model/DiagramData";
 import { SQLProviderName, SQLProviders } from "../constants/sqlProviders";
 
 export const HUES = [
@@ -195,55 +190,4 @@ export function toNodeRelationEdge(
   };
 }
 
-export function toDiagramDTOFromRawJSON(diagramRawJSONStr: string): DiagramDTO {
-  const diagramObj: DiagramDocument = JSON.parse(diagramRawJSONStr);
-  return {
-    diagram_oid: diagramObj._id.toString(),
-    createdAt: diagramObj.createdAt,
-    updatedAt: diagramObj.updatedAt,
-    title: diagramObj.title,
-    owner_oid: diagramObj.ownerId.toString(),
-    isPrivate: diagramObj.isPrivate,
-    providerName: diagramObj.provider,
-    shares: diagramObj.shares.map((s) => s.toString()),
-  };
-}
-
-export function toNodeDTOFromRawJSON(nodeRawJSONStr: string): NodeDTO {
-  const nodeObj: NodeDocument = JSON.parse(nodeRawJSONStr);
-  return {
-    id: nodeObj.id,
-    node_oid: nodeObj._id.toString(),
-    diagram_oid: nodeObj.diagramId.toString(),
-    createdAt: nodeObj.createdAt,
-    updatedAt: nodeObj.updatedAt,
-    position: nodeObj.position,
-    index: nodeObj.index,
-    data: nodeObj.data,
-  };
-}
-
-export function toEdgeDTOFromRawJSON(edgeRawJSONStr: string): EdgeDTO {
-  const edgeObj: EdgeDocument = JSON.parse(edgeRawJSONStr);
-  return {
-    id: edgeObj.id,
-    diagram_oid: edgeObj.diagramId.toString(),
-    createdAt: edgeObj.createdAt,
-    updatedAt: edgeObj.updatedAt,
-    index: edgeObj.index,
-    color: edgeObj.color,
-    relationType: edgeObj.relationType,
-    relationshipName: edgeObj.relationshipName,
-    isAutoNaming: edgeObj.isAutoNaming,
-    referentialActionForUpdate: edgeObj.referentialActionForUpdate,
-    referentialActionForDelete: edgeObj.referentialActionForDelete,
-    source: edgeObj.source,
-    sourceHandle: edgeObj.sourceHandle,
-    target: edgeObj.target,
-    targetHandle: edgeObj.targetHandle,
-    sourceColumnIds: edgeObj.sourceColumnIds,
-    targetSelectedPrimaryOrUniqueId: edgeObj.targetSelectedPrimaryOrUniqueId,
-    edge_oid: edgeObj._id.toString(),
-  };
-}
 //#endregion

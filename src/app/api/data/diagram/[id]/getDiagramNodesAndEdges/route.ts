@@ -1,17 +1,11 @@
 import { routing } from "@/src/i18n/routing";
 import { authOptions } from "@/src/lib/nextauth";
-import client from "@/src/lib/mongodb";
-import {
-  DiagramDocument,
-  EdgeDocument,
-  NodeDocument,
-} from "@/src/types/data/DiagramDocument";
-import { toEdgeDTO, toNodeDTO } from "@/src/utils/server";
-import { ObjectId } from "mongodb";
+import supabaseAdmin from "@/src/lib/supabase/admin";
+import { DiagramRow, EdgeRow, NodeRow } from "@/src/types/data/DiagramRow";
+import { isUuid, toEdgeDTO, toNodeDTO } from "@/src/utils/server";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
-import { EdgeDTO, NodeDTO } from "@/src/types/model/DiagramData";
 
 export async function GET(
   req: NextRequest,
@@ -26,40 +20,47 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!id || !ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ error: t("invalidId") }, { status: 400 });
     }
 
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
-
-    const diagram = await db.collection<DiagramDocument>("diagrams").findOne({
-      _id: new ObjectId(id),
-    });
+    const { data: diagram, error } = await supabaseAdmin
+      .from("diagrams")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle<DiagramRow>();
+    if (error) throw error;
 
     if (!diagram) {
       return NextResponse.json({ error: t("notFound") }, { status: 404 });
     }
 
-    const isOwner = diagram.ownerId.toString() === session.user.id;
+    const isOwner = diagram.owner_id === session.user.id;
 
-    if (diagram.isPrivate && !isOwner) {
+    if (diagram.is_private && !isOwner) {
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
-    let nodes: NodeDTO[] = (
-      await db
-        .collection<NodeDocument>("nodes")
-        .find({ diagramId: new ObjectId(id) })
-        .toArray()
-    ).map(toNodeDTO);
-    let edges: EdgeDTO[] = (
-      await db
-        .collection<EdgeDocument>("edges")
-        .find({ diagramId: new ObjectId(id) })
-        .toArray()
-    ).map(toEdgeDTO);
+    const [nodesRes, edgesRes] = await Promise.all([
+      supabaseAdmin
+        .from("nodes")
+        .select("*")
+        .eq("diagram_id", id)
+        .returns<NodeRow[]>(),
+      supabaseAdmin
+        .from("edges")
+        .select("*")
+        .eq("diagram_id", id)
+        .returns<EdgeRow[]>(),
+    ]);
+    if (nodesRes.error) throw nodesRes.error;
+    if (edgesRes.error) throw edgesRes.error;
 
-    return NextResponse.json({ success: true, nodes, edges });
+    return NextResponse.json({
+      success: true,
+      nodes: nodesRes.data.map(toNodeDTO),
+      edges: edgesRes.data.map(toEdgeDTO),
+    });
   } catch (err) {
     console.error(
       `GET /api/data/diagram/${id}/getDiagramNodesAndEdges error:`,

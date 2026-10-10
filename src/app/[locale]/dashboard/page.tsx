@@ -84,7 +84,7 @@ export default function Dashboard() {
       createdAt: new Date(),
       isPrivate: true,
     };
-    fetch("/api/data/addNewDiagram", {
+    fetch("/api/data/diagram", {
       method: "POST",
       headers: { "accept-language": locale },
       body: JSON.stringify(newDiagram),

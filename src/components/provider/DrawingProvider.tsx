@@ -2,21 +2,24 @@
 
 import { useRouter } from "@/src/i18n/navigation";
 import { routing } from "@/src/i18n/routing";
-import { BroadcastPayload, createClient } from "@/src/lib/supabase/client";
+import { createClient, RowChangePayload } from "@/src/lib/supabase/client";
+import { DiagramRow } from "@/src/types/data/DiagramRow";
 import { DiagramDTO, EdgeDTO, NodeDTO } from "@/src/types/model/DiagramData";
 import {
   NodeRelationEdge,
   TableNodeData,
 } from "@/src/types/model/ExtendedNodeEdge";
 import {
-  toDiagramDTOFromRawJSON,
   toEdgeDTO,
-  toEdgeDTOFromRawJSON,
   toNodeDTO,
-  toNodeDTOFromRawJSON,
   toNodeRelationEdge,
   toTableNodeData,
 } from "@/src/utils/client";
+import {
+  isUuid,
+  toDiagramDTO as toDiagramDTOFromRow,
+} from "@/src/utils/server";
+import { useParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSnackbar } from "notistack";
@@ -25,7 +28,11 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 //#region Store types
-const PERSIST_DEBOUNCE_MS = 500;
+// Edits are sent to other clients immediately (Broadcast) and saved to the DB after this idle time,
+// or at the latest PERSIST_MAX_WAIT_MS after the first unsaved edit (so nonstop editing still saves)
+const PERSIST_DEBOUNCE_MS = 3000;
+const PERSIST_MAX_WAIT_MS = 30000;
+const LIVE_THROTTLE_MS = 80;
 const RETRY_DELAY_MS = 5000;
 
 // Diagram fields that are persisted and synced in realtime.
@@ -56,6 +63,15 @@ interface PendingChanges {
   diagram: Set<DiagramSyncField>;
 }
 
+// What is sent to other clients while editing (flow ids, not DB ids)
+export interface LivePayload {
+  nodes: NodeDTO[];
+  edges: EdgeDTO[];
+  deleteNodeIds: string[];
+  deleteEdgeIds: string[];
+  diagram: DiagramSyncPatch | null;
+}
+
 export interface PendingSnapshot {
   upsertNodes: TableNodeData[];
   upsertEdges: NodeRelationEdge[];
@@ -78,6 +94,10 @@ interface DrawingState {
   pending: PendingChanges;
   dirtyVersion: number;
 
+  // Local changes not yet broadcast to other clients (includes position while dragging)
+  live: PendingChanges;
+  liveVersion: number;
+
   reset: () => void;
 
   fetchDiagramData: (diagramId: string, isFirstLoad?: boolean) => Promise<void>;
@@ -95,6 +115,7 @@ interface DrawingState {
 
   hasPending: () => boolean;
   takePending: () => PendingSnapshot;
+  takeLive: () => LivePayload;
   restorePending: (snapshot: PendingSnapshot) => void;
 }
 //#endregion
@@ -131,6 +152,13 @@ const nodeChanged = (a: TableNodeData, b: TableNodeData) =>
     (a.position.x !== b.position.x ||
       a.position.y !== b.position.y ||
       !!a.dragging));
+
+// For live broadcast, position counts even while dragging
+const nodeLiveChanged = (a: TableNodeData, b: TableNodeData) =>
+  a.data !== b.data ||
+  a.type !== b.type ||
+  a.position.x !== b.position.x ||
+  a.position.y !== b.position.y;
 
 const edgeChanged = (a: NodeRelationEdge, b: NodeRelationEdge) =>
   a.source !== b.source ||
@@ -203,9 +231,12 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
   locale: routing.defaultLocale,
   pending: createPending(),
   dirtyVersion: 0,
+  live: createPending(),
+  liveVersion: 0,
 
-  // Keeps `locale` and the monotonic `dirtyVersion` untouched
-  reset: () => set({ ...initialData, pending: createPending() }),
+  // Keeps `locale` and the monotonic versions untouched
+  reset: () =>
+    set({ ...initialData, pending: createPending(), live: createPending() }),
 
   //#region Fetch data from API
   fetchDiagramData: async (diagramId, isFirstLoad) => {
@@ -272,6 +303,7 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
           // Server state is the source of truth for nodes/edges after a full fetch.
           // A pending diagram edit is unrelated to that fetch, so keep it.
           pending: { ...createPending(), diagram: s.pending.diagram },
+          live: createPending(),
         }));
       } else {
         console.error(error);
@@ -289,10 +321,15 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
     set((s) => {
       // Only edits of synced fields on an already loaded diagram are persisted
       const changed = s.info ? changedSyncFields(s.info, newDiagram) : [];
-      for (const f of changed) s.pending.diagram.add(f);
+      for (const f of changed) {
+        s.pending.diagram.add(f);
+        s.live.diagram.add(f);
+      }
+      const hasChanges = changed.length > 0;
       return {
         info: newDiagram,
-        dirtyVersion: s.dirtyVersion + (changed.length > 0 ? 1 : 0),
+        dirtyVersion: s.dirtyVersion + (hasChanges ? 1 : 0),
+        liveVersion: s.liveVersion + (hasChanges ? 1 : 0),
       };
     });
   },
@@ -307,7 +344,18 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
         s.pending.nodes,
         s.pending.deletedNodes,
       );
-      return { nodes, dirtyVersion: s.dirtyVersion + (touched ? 1 : 0) };
+      const liveTouched = trackChanges(
+        s.nodes,
+        nodes,
+        nodeLiveChanged,
+        s.live.nodes,
+        s.live.deletedNodes,
+      );
+      return {
+        nodes,
+        dirtyVersion: s.dirtyVersion + (touched ? 1 : 0),
+        liveVersion: s.liveVersion + (liveTouched ? 1 : 0),
+      };
     });
   },
 
@@ -321,7 +369,18 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
         s.pending.edges,
         s.pending.deletedEdges,
       );
-      return { edges, dirtyVersion: s.dirtyVersion + (touched ? 1 : 0) };
+      const liveTouched = trackChanges(
+        s.edges,
+        edges,
+        edgeChanged,
+        s.live.edges,
+        s.live.deletedEdges,
+      );
+      return {
+        edges,
+        dirtyVersion: s.dirtyVersion + (touched ? 1 : 0),
+        liveVersion: s.liveVersion + (liveTouched ? 1 : 0),
+      };
     });
   },
   //#endregion
@@ -330,7 +389,9 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
   syncDiagram: (newDiagram) =>
     set((s) => {
       // Merge so fields the broadcast doesn't carry (ownerName, ownerAvatar) survive
-      const merged: DiagramDTO = s.info ? { ...s.info, ...newDiagram } : newDiagram;
+      const merged: DiagramDTO = s.info
+        ? { ...s.info, ...newDiagram }
+        : newDiagram;
       // Keep fields with a local, not yet saved edit; the rest comes from the server
       const next =
         s.info && s.pending.diagram.size > 0
@@ -353,9 +414,14 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
         if (s.pending.nodes.has(old.id) || old.dragging) return s;
         if (nodeEqual(old, newNode)) return s;
       }
+      const { selected, ...newNodeData } = newNode;
       return {
         nodes: old
-          ? s.nodes.map((n) => (n.id === newNode.id ? newNode : n))
+          ? s.nodes.map((n) =>
+              n.id === newNode.id
+                ? { selected: n.selected, ...newNodeData }
+                : n,
+            )
           : [...s.nodes, newNode],
       };
     }),
@@ -371,9 +437,14 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
         if (s.pending.edges.has(old.id)) return s;
         if (edgeEqual(old, newEdge)) return s;
       }
+      const { selected, ...newEdgeData } = newEdge;
       return {
         edges: old
-          ? s.edges.map((e) => (e.id === newEdge.id ? newEdge : e))
+          ? s.edges.map((e) =>
+              e.id === newEdge.id
+                ? { selected: e.selected, ...newEdgeData }
+                : e,
+            )
           : [...s.edges, newEdge],
       };
     }),
@@ -408,6 +479,25 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
     p.deletedEdges.clear();
     p.diagram.clear();
     return snapshot;
+  },
+
+  // Returns what must be broadcast to other clients and clears the live sets
+  takeLive: () => {
+    const { nodes, edges, info, live: l } = get();
+    const payload: LivePayload = {
+      diagram:
+        l.diagram.size > 0 && info ? pickSyncFields(info, l.diagram) : null,
+      nodes: nodes.filter((n) => l.nodes.has(n.id)).map(toNodeDTO),
+      edges: edges.filter((e) => l.edges.has(e.id)).map(toEdgeDTO),
+      deleteNodeIds: [...l.deletedNodes],
+      deleteEdgeIds: [...l.deletedEdges],
+    };
+    l.nodes.clear();
+    l.edges.clear();
+    l.deletedNodes.clear();
+    l.deletedEdges.clear();
+    l.diagram.clear();
+    return payload;
   },
 
   // Put a failed snapshot back (silently, no version bump: the caller schedules the retry)
@@ -477,10 +567,13 @@ export default function DrawingProvider({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let queue: Promise<void> = Promise.resolve();
     let failed = false;
+    // When the oldest unsaved edit happened (for the max wait)
+    let dirtySince: number | null = null;
     let disposed = false;
 
     // Never throws. Takes the snapshot synchronously, then sends it.
     const send = async (keepalive: boolean) => {
+      dirtySince = null;
       const store = useDrawingStore.getState();
       const id = store.info?.diagram_oid;
       if (!id || !store.hasPending()) return;
@@ -582,7 +675,15 @@ export default function DrawingProvider({
     }
 
     const unsubscribe = useDrawingStore.subscribe((s, prev) => {
-      if (s.dirtyVersion !== prev.dirtyVersion) schedule(PERSIST_DEBOUNCE_MS);
+      if (s.dirtyVersion === prev.dirtyVersion) return;
+      const now = Date.now();
+      dirtySince ??= now;
+      schedule(
+        Math.min(
+          PERSIST_DEBOUNCE_MS,
+          Math.max(0, dirtySince + PERSIST_MAX_WAIT_MS - now),
+        ),
+      );
     });
 
     // Flush immediately when the tab is hidden or closed
@@ -609,65 +710,142 @@ export default function DrawingProvider({
   //#endregion
 
   //#region Realtime: apply remote changes
-  useEffect(() => {
-    const channel = supabase.channel("mongo:documents_changes");
+  // Each diagram has its own private topic, fed by the DB triggers in
+  // supabase/migrations (realtime.broadcast_changes)
+  const pathname = usePathname();
+  const routeParams = useParams<{ id?: string }>();
+  const diagramId =
+    pathname.includes("/drawing/") && isUuid(routeParams.id)
+      ? routeParams.id
+      : undefined;
 
-    channel
-      .on(
-        "broadcast",
-        { event: "mongo_diagram_changed" },
-        ({ payload }: { payload: BroadcastPayload }) => {
-          const { data, is_deleted } = payload;
-          const diagramDTO: DiagramDTO = toDiagramDTOFromRawJSON(data);
-          diagramDTO.isOwned = diagramDTO.owner_oid === latest.current.userId;
-          useDrawingStore.getState().syncDiagram(diagramDTO);
-          if (is_deleted) {
-            latest.current.enqueueSnackbar(
-              latest.current.t("diagramDeletedAndRedirectToDashboard"),
-              { variant: "error" },
-            );
-            latest.current.router.push("/dashboard");
-          }
-        },
-      )
-      .on(
-        "broadcast",
-        { event: "mongo_node_changed" },
-        ({ payload }: { payload: BroadcastPayload }) => {
-          const { data, is_deleted } = payload;
-          useDrawingStore
-            .getState()
-            .syncNode(toTableNodeData(toNodeDTOFromRawJSON(data)), is_deleted);
-        },
-      )
-      .on(
-        "broadcast",
-        { event: "mongo_edge_changed" },
-        ({ payload }: { payload: BroadcastPayload }) => {
-          const { data, is_deleted } = payload;
-          const store = useDrawingStore.getState();
-          store.syncEdge(
-            // Read current nodes from the store, not from a stale closure
-            toNodeRelationEdge(
-              toEdgeDTOFromRawJSON(data),
-              store.nodes.map(toNodeDTO),
-            ),
-            is_deleted,
-          );
-        },
-      )
-      .subscribe((status, error) => {
-        if (status === "SUBSCRIBED") {
-          console.log("Successful subscribing to Supabase Broadcast");
-        } else {
-          console.error("Error subscribing to Supabase channel:", error);
-        }
+  useEffect(() => {
+    if (!diagramId) return;
+
+    let disposed = false;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let subscribed = false;
+    let liveTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Sends local edits to the other clients right away (throttled). Not saved
+    // to the DB here: that is the autosave's job.
+    const sendLive = () => {
+      liveTimer = undefined;
+      const payload = useDrawingStore.getState().takeLive();
+      if (!subscribed || !channel) return;
+      if (
+        !payload.diagram &&
+        payload.nodes.length === 0 &&
+        payload.edges.length === 0 &&
+        payload.deleteNodeIds.length === 0 &&
+        payload.deleteEdgeIds.length === 0
+      ) {
+        return;
+      }
+      void channel.send({ type: "broadcast", event: "live", payload });
+    };
+    const unsubscribeLive = useDrawingStore.subscribe((s, prev) => {
+      if (s.liveVersion !== prev.liveVersion && !liveTimer) {
+        liveTimer = setTimeout(sendLive, LIVE_THROTTLE_MS);
+      }
+    });
+
+    // The private channel is authorized by a short-lived JWT minted from the
+    // next-auth session; renew it before it expires
+    const refreshToken = async () => {
+      const res = await fetch("/api/realtime/token", { cache: "no-store" });
+      const { token, expiresIn } = await res.json();
+      if (!res.ok || !token) throw new Error("Cannot get realtime token");
+      await supabase.realtime.setAuth(token);
+      if (disposed) return;
+      refreshTimer = setTimeout(
+        () =>
+          refreshToken().catch((e) =>
+            console.error("Realtime token refresh failed:", e),
+          ),
+        expiresIn * 0.8 * 1000,
+      );
+    };
+
+    const start = async () => {
+      try {
+        await refreshToken();
+      } catch (e) {
+        console.error("Realtime auth failed:", e);
+        return;
+      }
+      if (disposed) return;
+
+      channel = supabase.channel(`diagram:${diagramId}`, {
+        config: { private: true },
       });
 
-    return () => {
-      supabase.removeChannel(channel);
+      channel
+        .on(
+          "broadcast",
+          { event: "diagram_changed" },
+          ({ payload }: { payload: RowChangePayload<DiagramRow> }) => {
+            const is_deleted = payload.operation === "DELETE";
+            const row = is_deleted ? payload.old_record : payload.record;
+            if (!row) return;
+            const diagramDTO: DiagramDTO = toDiagramDTOFromRow(row);
+            diagramDTO.isOwned = diagramDTO.owner_oid === latest.current.userId;
+            useDrawingStore.getState().syncDiagram(diagramDTO);
+            if (is_deleted) {
+              latest.current.enqueueSnackbar(
+                latest.current.t("diagramDeletedAndRedirectToDashboard"),
+                { variant: "error" },
+              );
+              latest.current.router.push("/dashboard");
+            }
+          },
+        )
+        .on(
+          "broadcast",
+          { event: "live" },
+          ({ payload }: { payload: LivePayload }) => {
+            const store = useDrawingStore.getState();
+            if (payload.diagram && store.info) {
+              store.syncDiagram(payload.diagram as DiagramDTO);
+            }
+            for (const id of payload.deleteNodeIds ?? []) {
+              store.syncNode({ id } as TableNodeData, true);
+            }
+            for (const node of payload.nodes ?? []) {
+              store.syncNode(toTableNodeData(node), false);
+            }
+            // Read nodes after they were applied, not from a stale closure
+            const nodeDTOs = useDrawingStore.getState().nodes.map(toNodeDTO);
+            for (const id of payload.deleteEdgeIds ?? []) {
+              store.syncEdge({ id } as NodeRelationEdge, true);
+            }
+            for (const edge of payload.edges ?? []) {
+              store.syncEdge(toNodeRelationEdge(edge, nodeDTOs), false);
+            }
+          },
+        )
+        .subscribe((status, error) => {
+          if (status === "SUBSCRIBED") {
+            subscribed = true;
+            console.log("Successful subscribing to Supabase Broadcast");
+          } else {
+            subscribed = false;
+            console.error("Error subscribing to Supabase channel:", error);
+          }
+        });
     };
-  }, [supabase]);
+
+    void start();
+
+    return () => {
+      disposed = true;
+      unsubscribeLive();
+      clearTimeout(liveTimer);
+      clearTimeout(refreshTimer);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [supabase, diagramId]);
   //#endregion
 
   return <>{children}</>;

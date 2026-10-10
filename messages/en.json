@@ -364,7 +364,8 @@
     "selectMany": "Select many",
     "noSessionFound": "No session found",
     "unauthorized": "Unauthorized",
-    "noDiagramsAddNew": "There is no diagrams, add new one"
+    "noDiagramsAddNew": "There is no diagrams, add new one",
+    "noTitle":"No title"
   },
   "DashboardCard": {
     "shareDiagram": "Share diagram",

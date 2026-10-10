@@ -1,17 +1,12 @@
 import { routing } from "@/src/i18n/routing";
 import { authOptions } from "@/src/lib/nextauth";
-import client from "@/src/lib/mongodb";
-import {
-  DiagramDocument,
-  EdgeDocument,
-  NodeDocument,
-} from "@/src/types/data/DiagramDocument";
-import { ObjectId } from "mongodb";
+import supabaseAdmin from "@/src/lib/supabase/admin";
+import { DiagramRow } from "@/src/types/data/DiagramRow";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse } from "next/server";
 import { EdgeDTO, NodeDTO } from "@/src/types/model/DiagramData";
-import { toEdgeDocument, toNodeDocument } from "@/src/utils/server";
+import { isUuid, toEdgeRow, toNodeRow } from "@/src/utils/server";
 
 type RequestBody = {
   upsertNodes?: NodeDTO[];
@@ -20,22 +15,45 @@ type RequestBody = {
   deleteEdgeIds?: string[];
 };
 
-const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+const MAX_DELETE_IDS = 5000;
 
-// Ids that are not ObjectIds were never persisted (e.g. created and deleted
-// before the first save), so there is nothing to delete for them.
-const toObjectIds = (ids: unknown): ObjectId[] =>
+// Flow ids (e.g. "table_xxx"), the same ids used as flow_id when upserting
+const toFlowIds = (ids: unknown): string[] =>
   Array.isArray(ids)
     ? ids
-        .filter(
-          (x): x is string =>
-            typeof x === "string" && OBJECT_ID_PATTERN.test(x),
-        )
-        .map((x) => new ObjectId(x))
+        .filter((x): x is string => typeof x === "string" && x.length > 0)
+        .slice(0, MAX_DELETE_IDS)
     : [];
 
 const toArray = <T>(value: unknown): T[] =>
   Array.isArray(value) ? (value as T[]) : [];
+
+// One upsert statement can't touch the same row twice: the last one wins
+const uniqueByFlowId = <T extends { flow_id: string }>(rows: T[]): T[] => [
+  ...new Map(rows.map((row) => [row.flow_id, row])).values(),
+];
+
+type Table = "nodes" | "edges";
+
+// Upsert by (diagram_id, flow_id): always scoped to this diagram, so a row of
+// another diagram can never be overwritten
+async function upsertRows(table: Table, rows: { flow_id: string }[]) {
+  if (rows.length === 0) return;
+  const { error } = await supabaseAdmin
+    .from(table)
+    .upsert(rows, { onConflict: "diagram_id,flow_id" });
+  if (error) throw error;
+}
+
+async function deleteRows(table: Table, diagramId: string, flowIds: string[]) {
+  if (flowIds.length === 0) return;
+  const { error } = await supabaseAdmin
+    .from(table)
+    .delete()
+    .eq("diagram_id", diagramId)
+    .in("flow_id", flowIds);
+  if (error) throw error;
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -51,7 +69,7 @@ export async function PATCH(
       return NextResponse.json({ error: t("unauthorized") }, { status: 401 });
     }
 
-    if (!id || !ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ error: t("invalidId") }, { status: 400 });
     }
 
@@ -64,80 +82,41 @@ export async function PATCH(
 
     const upsertNodes = toArray<NodeDTO>(body?.upsertNodes);
     const upsertEdges = toArray<EdgeDTO>(body?.upsertEdges);
-    const deleteNodeIds = toObjectIds(body?.deleteNodeIds);
-    const deleteEdgeIds = toObjectIds(body?.deleteEdgeIds);
+    const deleteNodeIds = toFlowIds(body?.deleteNodeIds);
+    const deleteEdgeIds = toFlowIds(body?.deleteEdgeIds);
 
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
-
-    const diagramObjectId = new ObjectId(id);
-    const diagram = await db.collection<DiagramDocument>("diagrams").findOne({
-      _id: diagramObjectId,
-    });
+    const { data: diagram, error: findError } = await supabaseAdmin
+      .from("diagrams")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle<DiagramRow>();
+    if (findError) throw findError;
 
     if (!diagram) {
       return NextResponse.json({ error: t("notFound") }, { status: 404 });
     }
 
-    const isOwner = diagram.ownerId.toString() === session.user.id;
+    const isOwner = diagram.owner_id === session.user.id;
 
-    if (diagram.isPrivate && !isOwner) {
+    if (diagram.is_private && !isOwner) {
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
-    const nodeCol = db.collection<NodeDocument>("nodes");
-    const edgeCol = db.collection<EdgeDocument>("edges");
-
-    // Upsert each changed node/edge by its own _id, always scoped to this diagram.
-    // If the _id already belongs to another diagram, the upsert fails with a
-    // duplicate key error instead of overwriting that document.
-    const nodeOps = upsertNodes.map(toNodeDocument).map(({ _id, ...rest }) => ({
-      replaceOne: {
-        filter: { _id, diagramId: diagramObjectId },
-        replacement: {
-          ...rest,
-          updatedAt: new Date(),
-          diagramId: diagramObjectId,
-        },
-        upsert: true,
-      },
-    }));
-
-    const edgeOps = upsertEdges.map(toEdgeDocument).map(({ _id, ...rest }) => ({
-      replaceOne: {
-        filter: { _id, diagramId: diagramObjectId },
-        replacement: {
-          ...rest,
-          updatedAt: new Date(),
-          diagramId: diagramObjectId,
-        },
-        upsert: true,
-      },
-    }));
-
-    // bulkWrite throws on an empty array, so only call it when there is work
     await Promise.all([
-      nodeOps.length > 0
-        ? nodeCol.bulkWrite(nodeOps, { ordered: false })
-        : null,
-      edgeOps.length > 0
-        ? edgeCol.bulkWrite(edgeOps, { ordered: false })
-        : null,
+      upsertRows(
+        "nodes",
+        uniqueByFlowId(upsertNodes.map((n) => toNodeRow(n, id))),
+      ),
+      upsertRows(
+        "edges",
+        uniqueByFlowId(upsertEdges.map((e) => toEdgeRow(e, id))),
+      ),
     ]);
 
     // Delete only what the client explicitly removed, scoped to this diagram
     await Promise.all([
-      deleteNodeIds.length > 0
-        ? nodeCol.deleteMany({
-            diagramId: diagramObjectId,
-            _id: { $in: deleteNodeIds },
-          })
-        : null,
-      deleteEdgeIds.length > 0
-        ? edgeCol.deleteMany({
-            diagramId: diagramObjectId,
-            _id: { $in: deleteEdgeIds },
-          })
-        : null,
+      deleteRows("nodes", id, deleteNodeIds),
+      deleteRows("edges", id, deleteEdgeIds),
     ]);
 
     return NextResponse.json({ success: true });

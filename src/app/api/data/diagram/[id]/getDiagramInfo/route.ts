@@ -1,9 +1,11 @@
 import { routing } from "@/src/i18n/routing";
 import { authOptions } from "@/src/lib/nextauth";
 import client from "@/src/lib/mongodb";
-import { DiagramDocument } from "@/src/types/data/DiagramDocument";
+import supabaseAdmin from "@/src/lib/supabase/admin";
+import { DiagramRow } from "@/src/types/data/DiagramRow";
 import { DiagramDTO } from "@/src/types/model/DiagramData";
 import { ExtendedAdapterUser } from "@/src/types/data/ExtendedAdapterUser";
+import { isUuid, toDiagramDTO } from "@/src/utils/server";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
@@ -22,47 +24,45 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!id || !ObjectId.isValid(id)) {
+    if (!isUuid(id)) {
       return NextResponse.json({ error: t("invalidId") }, { status: 400 });
     }
 
-    const db = client.db(process.env.MONGODB_DATA_DB_NAME);
-
-    const diagram = await db.collection<DiagramDocument>("diagrams").findOne({
-      _id: new ObjectId(id),
-    });
+    const { data: diagram, error } = await supabaseAdmin
+      .from("diagrams")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle<DiagramRow>();
+    if (error) throw error;
 
     if (!diagram) {
       return NextResponse.json({ error: t("notFound") }, { status: 404 });
     }
 
-    const isOwner = diagram.ownerId.toString() === session.user.id;
+    const isOwner = diagram.owner_id === session.user.id;
 
-    if (diagram.isPrivate && !isOwner) {
+    if (diagram.is_private && !isOwner) {
       return NextResponse.json({ error: t("forbidden") }, { status: 403 });
     }
 
-    const owner = await db
-      .collection<ExtendedAdapterUser>("users")
-      .findOne({ _id: diagram.ownerId });
+    // Users still live in MongoDB
+    const owner = ObjectId.isValid(diagram.owner_id)
+      ? await client
+          .db(process.env.MONGODB_DATA_DB_NAME)
+          .collection<ExtendedAdapterUser>("users")
+          .findOne({ _id: new ObjectId(diagram.owner_id) })
+      : null;
 
-    let diagramInfo: DiagramDTO = {
-      createdAt: diagram.createdAt,
-      diagram_oid: diagram._id.toString(),
+    const diagramInfo: DiagramDTO = {
+      ...toDiagramDTO(diagram),
       isOwned: isOwner,
-      isPrivate: diagram.isPrivate,
-      updatedAt: diagram.updatedAt,
       ownerAvatar: owner?.image,
       ownerName: owner?.name,
-      title: diagram.title,
-      providerName: diagram.provider,
-      owner_oid: diagram.ownerId.toString(),
-      shares: diagram.shares.map((shareId) => shareId.toString()),
     };
 
     return NextResponse.json({ success: true, diagramInfo });
   } catch (err) {
-    console.error(`GET /api/data/diagram/${id}/getDiagramDTO error:`, err);
+    console.error(`GET /api/data/diagram/${id}/getDiagramInfo error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

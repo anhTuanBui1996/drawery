@@ -1,11 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-export type BroadcastPayload = {
+// Payload of realtime.broadcast_changes (the row is the table row as JSON)
+export type RowChangePayload<T> = {
   id: string;
-  data: string;
-  mongo_id: string;
-  is_deleted: boolean;
-  synced_at: string;
+  schema: string;
+  table: string;
+  operation: "INSERT" | "UPDATE" | "DELETE";
+  record: T | null;
+  old_record: T | null;
 };
 
 export function createClient() {
