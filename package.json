@@ -54,5 +54,12 @@
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "bcrypt": true,
+    "sharp": true,
+    "@swc/core": true,
+    "@tailwindcss/oxide": true,
+    "@parcel/watcher": true
   }
 }
