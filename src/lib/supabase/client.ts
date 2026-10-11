@@ -12,8 +12,8 @@ export type RowChangePayload<T> = {
 
 export function createClient() {
   return createBrowserClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       realtime: {
         reconnectAfterMs: (tries) => Math.min(1000 * 2 ** tries, 30000),
