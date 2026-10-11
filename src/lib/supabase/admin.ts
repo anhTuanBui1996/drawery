@@ -9,7 +9,7 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
 // Server-only client that bypasses RLS. Authorization is done in the API
 // routes (next-auth session), so never import this from client code.
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
