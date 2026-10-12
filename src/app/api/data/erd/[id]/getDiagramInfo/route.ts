@@ -62,7 +62,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, diagramInfo });
   } catch (err) {
-    console.error(`GET /api/data/diagram/${id}/getDiagramInfo error:`, err);
+    console.error(`GET /api/data/erd/${id}/getDiagramInfo error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

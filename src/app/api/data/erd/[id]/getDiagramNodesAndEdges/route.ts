@@ -63,7 +63,7 @@ export async function GET(
     });
   } catch (err) {
     console.error(
-      `GET /api/data/diagram/${id}/getDiagramNodesAndEdges error:`,
+      `GET /api/data/erd/${id}/getDiagramNodesAndEdges error:`,
       err,
     );
     return NextResponse.json({ error: t("alertError") }, { status: 500 });

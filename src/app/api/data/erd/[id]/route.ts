@@ -43,7 +43,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, diagram });
   } catch (err) {
-    console.error(`GET /api/data/diagram/${id} error:`, err);
+    console.error(`GET /api/data/erd/${id} error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }
@@ -89,7 +89,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, diagram });
   } catch (err) {
-    console.error(`DELETE /api/data/diagram/${id} error:`, err);
+    console.error(`DELETE /api/data/erd/${id} error:`, err);
     return NextResponse.json({ error: t("alertError") }, { status: 500 });
   }
 }

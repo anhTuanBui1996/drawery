@@ -254,7 +254,7 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
       );
     };
     try {
-      const res = await fetch(`/api/data/diagram/${diagramId}/getDiagramInfo`, {
+      const res = await fetch(`/api/data/erd/${diagramId}/getDiagramInfo`, {
         headers: { "accept-language": get().locale },
       });
       const {
@@ -281,7 +281,7 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
     set({ syncing: true, error: null });
     try {
       const res = await fetch(
-        `/api/data/diagram/${diagramId}/getDiagramNodesAndEdges`,
+        `/api/data/erd/${diagramId}/getDiagramNodesAndEdges`,
         { headers: { "accept-language": get().locale }, method: "GET" },
       );
       const {
@@ -581,7 +581,7 @@ export default function DrawingProvider({
       const snapshot = store.takePending();
 
       const patch = async (path: string, payload: unknown) => {
-        const res = await fetch(`/api/data/diagram/${id}/${path}`, {
+        const res = await fetch(`/api/data/erd/${id}/${path}`, {
           method: "PATCH",
           keepalive,
           headers: {

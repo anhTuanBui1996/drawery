@@ -122,7 +122,7 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(
-      `PATCH /api/data/diagram/${id}/updateDiagramNodesAndEdges error:`,
+      `PATCH /api/data/erd/${id}/updateDiagramNodesAndEdges error:`,
       err,
     );
     return NextResponse.json({ error: t("alertError") }, { status: 500 });

@@ -42,13 +42,13 @@ export default function Dashboard() {
   const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
-    fetch("/api/data/diagram", { headers: { "accept-language": locale } })
+    fetch("/api/data/erd", { headers: { "accept-language": locale } })
       .then((res) => res.json())
       .then(
         ({ success, diagrams }: { success: boolean; diagrams: DiagramDTO[] }) =>
           success && setMyDiagrams(diagrams),
       );
-    fetch("/api/data/diagram/shareWithMe", {
+    fetch("/api/data/erd/shareWithMe", {
       headers: { "accept-language": locale },
     })
       .then((res) => res.json())
@@ -84,7 +84,7 @@ export default function Dashboard() {
       createdAt: new Date(),
       isPrivate: true,
     };
-    fetch("/api/data/diagram", {
+    fetch("/api/data/erd", {
       method: "POST",
       headers: { "accept-language": locale },
       body: JSON.stringify(newDiagram),
