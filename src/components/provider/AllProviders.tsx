@@ -47,7 +47,7 @@ export function Providers({
         <ThemeProvider theme={theme} defaultMode="light">
           <LocalizationProvider dateAdapter={AdapterMoment}>
             <LoaderProvider>
-              <SnackbarProvider maxSnack={3}>
+              <SnackbarProvider maxSnack={3} style={{ fontFamily: "Roboto" }}>
                 <ReactFlowProvider>
                   <ScrollTargetsProvider>
                     <DrawingProvider>
