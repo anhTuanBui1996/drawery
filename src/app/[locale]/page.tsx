@@ -257,10 +257,10 @@ function NodeShape({
 }
 
 // Relationship end labels ("N" / "1") and the round icon in the middle of a line
-function EdgeTag({ x, y, text }: { x: number; y: number; text: string }) {
+function EdgeTag({ x, y, text, classTag }: { x: number; y: number; text: string; classTag: string }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect className="tag" x={-7} y={-7} width={14} height={14} rx={3} />
+      <rect className={classTag} x={-7} y={-7} width={14} height={14} rx={3} />
       <text className="tagt" y={3.2} style={{ fontFamily: "Roboto" }}>
         {text}
       </text>
@@ -471,7 +471,8 @@ function HeroScene() {
               animation: `${flow} 1.2s linear infinite`,
             },
             "& .appear": { animation: `${fadeIn} 0.5s ease-out backwards` },
-            "& .tag": { fill: "#1565c0" },
+            "& .tag-a": { fill: "#1565c0" },
+            "& .tag-b": { fill: "#8bc34a" },
             "& .tagt": {
               fill: "#fff",
               fontSize: 8.5,
@@ -590,11 +591,11 @@ function HeroScene() {
 
         {/* End labels and the icon on each line, after the lines are drawn */}
         <g className="appear" style={{ animationDelay: "2.1s" }}>
-          <EdgeTag x={301} y={90.5} text="N" />
-          <EdgeTag x={339} y={267.5} text="1" />
+          <EdgeTag x={301} y={90.5} text="N" classTag="tag-a" />
+          <EdgeTag x={339} y={267.5} text="1" classTag="tag-a" />
           <EdgeHub x={320} y={179} color="#2196f3" />
-          <EdgeTag x={168} y={177} text="N" />
-          <EdgeTag x={136} y={277} text="1" />
+          <EdgeTag x={168} y={177} text="N" classTag="tag-b" />
+          <EdgeTag x={136} y={277} text="1" classTag="tag-b" />
           <EdgeHub x={152} y={230} color="#8bc34a" />
         </g>
 
@@ -833,6 +834,7 @@ function FeatureCell({
         fontWeight={600}
         mb={1}
         sx={{ position: "relative" }}
+        color="textPrimary"
       >
         {title}
       </Typography>
@@ -1355,7 +1357,12 @@ const Index = () => {
                   >
                     {a.icon}
                   </Box>
-                  <Typography variant="h6" fontWeight={600} mb={1.25}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    mb={1.25}
+                    color="textPrimary"
+                  >
                     {a.title}
                   </Typography>
                   <Typography color="text.secondary" lineHeight={1.7}>
@@ -1432,13 +1439,16 @@ const Index = () => {
                           "color-mix(in srgb, var(--accent) 16%, transparent)",
                       }}
                     >
-                      {item.author[0]}
+                      <Typography textTransform={"uppercase"} fontWeight={600}>
+                        {item.author[0]}
+                      </Typography>
                     </Box>
                     <Box>
                       <Typography
                         variant="subtitle1"
                         fontWeight={600}
                         lineHeight={1.3}
+                        color="textPrimary"
                       >
                         {item.author}
                       </Typography>

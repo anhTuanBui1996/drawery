@@ -214,13 +214,31 @@ export default function SignUp({
     <CustomBox>
       <SignUpContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
-          <AppLogo />
           <Typography
-            component="h1"
-            variant="h4"
-            sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
+            component={"span"}
+            fontSize={20}
+            textAlign={"center"}
+            paddingTop={4}
+            paddingBottom={1}
+            fontWeight={"400"}
+            display={"flex"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            gap={1}
           >
-            Sign up
+            {t("title")} {<AppLogo />}
+          </Typography>
+          <Typography
+            color={"GrayText"}
+            fontSize={12}
+            textAlign={"center"}
+            paddingTop={1}
+            paddingBottom={4}
+            fontStyle={"italic"}
+            fontFamily={"cursive"}
+            fontWeight={"400"}
+          >
+            {t("subtitle")}
           </Typography>
           <Box
             component="form"

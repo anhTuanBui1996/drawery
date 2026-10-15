@@ -94,6 +94,8 @@
     "linkPrivacy": "Privacy Policy"
   },
   "SignUp": {
+    "title": "Welcome to ",
+    "subtitle": "Sign up your account to participate",
     "alertRegistration": "Registration",
     "alertRegistrationSuccess": "Registration Successful. Please log in.",
     "alertRegistrationFail": "Registration Failed! Please try again...",

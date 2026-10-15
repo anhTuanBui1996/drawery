@@ -94,6 +94,8 @@
     "linkPrivacy": "Chính sách quyền riêng tư"
   },
   "SignUp": {
+    "title": "Chào mừng đến với ",
+    "subtitle": "Đăng ký tài khoản để tham gia",
     "alertRegistration": "Đăng ký",
     "alertRegistrationSuccess": "Đăng ký thành công",
     "alertRegistrationFail": "Đăng ký thất bại",
