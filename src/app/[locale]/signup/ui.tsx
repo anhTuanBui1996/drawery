@@ -21,7 +21,6 @@ import { Link, useRouter } from "@/src/i18n/navigation";
 import Swal from "sweetalert2";
 import {
   ClientSafeProvider,
-  getProviders,
   LiteralUnion,
   signIn,
 } from "next-auth/react";
@@ -309,7 +308,7 @@ export default function SignUp({
               label="I want to receive updates via email."
             />
             <Button
-              type="submit"
+              type="button"
               fullWidth
               variant="contained"
               onClick={validateInputs}

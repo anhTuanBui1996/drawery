@@ -65,7 +65,7 @@ export default function SignIn({
           variant: "success",
           message: t("alertLoginSuccess"),
         });
-        router.push(callback || `/dashboard`);
+        router.push(callback || defaultCallBack);
         break;
       case "loading":
         setIsAuthenticating(true);
@@ -101,7 +101,7 @@ export default function SignIn({
     setIsAuthenticating(true);
     signIn("credentials", {
       ...user,
-      defaultCallBack,
+      callbackUrl: callback || defaultCallBack,
       redirect: false,
     }).then((result) => {
       setIsAuthenticating(false);
@@ -129,16 +129,18 @@ export default function SignIn({
   };
 
   const handleOAuthSignIn = (provider: string) => {
-    signIn(provider, { defaultCallBack }).then((result) => {
-      setIsAuthenticating(false);
-      if (!result?.ok && result?.error) {
-        Swal.fire({
-          icon: "error",
-          title: t("alertErrorTitle"),
-          text: result?.error || t("alertError"),
-        });
-      }
-    });
+    signIn(provider, { callbackUrl: callback || defaultCallBack }).then(
+      (result) => {
+        setIsAuthenticating(false);
+        if (!result?.ok && result?.error) {
+          Swal.fire({
+            icon: "error",
+            title: t("alertErrorTitle"),
+            text: result?.error || t("alertError"),
+          });
+        }
+      },
+    );
   };
 
   return (
@@ -150,6 +152,7 @@ export default function SignIn({
       }}
     >
       <Paper
+        component={"form"}
         sx={{
           width: "30%",
           minWidth: 350,
